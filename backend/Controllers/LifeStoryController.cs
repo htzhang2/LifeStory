@@ -81,10 +81,17 @@ namespace backend.Controllers
 
         }
         [HttpPost]
-        public async Task<ActionResult<LifeStory>> Create(LifeStory lifeStory)
+        public async Task<ActionResult<LifeStory>> Create(CreateLifeStoryRequest request)
         {
-            lifeStory.CreatedAt = DateTime.UtcNow;
-            lifeStory.UpdatedAt = DateTime.UtcNow;
+            var lifeStory = new LifeStory
+            {
+                Title = request.Title,
+                AuthorName = request.AuthorName,
+                BirthYear = request.BirthYear,
+                BirthPlace = request.BirthPlace,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
             _db.LifeStories.Add(lifeStory);
             await _db.SaveChangesAsync();

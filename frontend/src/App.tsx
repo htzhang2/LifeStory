@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import WelcomePage from "./pages/WelcomePage"
+import BasicInfoPage from "./pages/BasicInfoPage"
 import QuestionPage from "./pages/QuestionPage"
 import { StoryProvider } from "./context/StoryContext"
 
@@ -9,6 +10,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<WelcomePage />} />
+          <Route
+            path="/basic-info"
+            element={<BasicInfoPage />}
+          />
           <Route
             path="/question/:questionNumber"
             element={<QuestionPage />} />

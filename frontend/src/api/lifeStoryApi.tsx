@@ -4,6 +4,8 @@ export type LifeStory = {
   id: number
   title: string
   authorName: string
+  birthYear: number | null
+  birthPlace: string
   createdAt: string
   updatedAt: string
 }
@@ -48,7 +50,9 @@ export async function saveAnswer(
 
 export async function createLifeStory(
   title: string,
-  authorName: string
+  authorName: string,
+  birthYear: number | null,
+  birthPlace: string
 ): Promise<LifeStory> {
   const response = await fetch(`${API_BASE_URL}/LifeStory`, {
     method: "POST",
@@ -58,6 +62,8 @@ export async function createLifeStory(
     body: JSON.stringify({
       title,
       authorName,
+      birthYear,
+      birthPlace
     }),
   })
 
