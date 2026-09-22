@@ -96,7 +96,12 @@ function QuestionPage() {
       // Keep the answer in React state too.
       setAnswer(currentQuestionNumber, trimmedAnswer)
 
-      navigate(`/question/${currentQuestionNumber + 1}`)
+      if (currentQuestionNumber < totalQuestions) {
+        navigate(`/question/${currentQuestionNumber + 1}`)
+      }
+      else {
+        navigate("/story")
+      }
     } catch (error) {
       console.error("Failed to save answer:", error)
       alert("Unable to save your answer. Please try again.")

@@ -14,6 +14,7 @@ namespace backend.Data
 
         public DbSet<InterviewAnswer> InterviewAnswers => Set<InterviewAnswer>();
         public DbSet<HistoricalContext> HistoricalContexts => Set<HistoricalContext>();
+        public DbSet<Chapter> Chapters => Set<Chapter>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,20 @@ namespace backend.Data
                 .WithMany()
                 .HasForeignKey(x => x.LifeStoryId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Chapter>()
+                .HasOne<LifeStory>()
+                .WithMany()
+                .HasForeignKey(x => x.LifeStoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Chapter>()
+                .HasIndex(x => new
+                {
+                    x.LifeStoryId,
+                    x.ChapterNumber
+                })
+                .IsUnique();
         }
 
     }

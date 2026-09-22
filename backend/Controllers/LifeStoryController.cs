@@ -155,9 +155,9 @@ namespace backend.Controllers
         }
 
         [HttpPost("{id}/chapters/{chapterNumber}/generate")]
-        public async Task<ActionResult<string>> GenerateChapter(
-    int id,
-    int chapterNumber)
+        public async Task<ActionResult<Chapter>> GenerateChapter(
+            int id,
+            int chapterNumber)
         {
             var lifeStory = await _db.LifeStories
                 .FindAsync(id);
@@ -188,16 +188,59 @@ namespace backend.Controllers
                 _ => $"Chapter {chapterNumber}"
             };
 
-            var chapter = await _aiService.GenerateChapterAsync(
+            var chapterContent = await _aiService.GenerateChapterAsync(
                 chapterTitle,
                 answers.Select(x => (x.Question, x.Answer)));
 
-            return Ok(new
+            var chapter = await _db.Chapters
+                .FirstOrDefaultAsync(x =>
+                    x.LifeStoryId == id &&
+                    x.ChapterNumber == chapterNumber);
+
+            if (chapter == null)
             {
-                chapterNumber,
-                title = chapterTitle,
-                content = chapter
-            });
+                chapter = new Chapter
+                {
+                    LifeStoryId = id,
+                    ChapterNumber = chapterNumber,
+                    Title = chapterTitle,
+                    Content = chapterContent,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _db.Chapters.Add(chapter);
+            }
+            else
+            {
+                chapter.Title = chapterTitle;
+                chapter.Content = chapterContent;
+                chapter.UpdatedAt = DateTime.UtcNow;
+            }
+
+            lifeStory.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(chapter);
+        }
+
+        [HttpGet("{id}/chapters/{chapterNumber}")]
+        public async Task<ActionResult<Chapter>> GetChapter(
+            int id,
+            int chapterNumber)
+        {
+            var chapter = await _db.Chapters
+                .FirstOrDefaultAsync(x =>
+                    x.LifeStoryId == id &&
+                    x.ChapterNumber == chapterNumber);
+
+            if (chapter == null)
+            {
+                return NotFound("Chapter not found.");
+            }
+
+            return Ok(chapter);
         }
     }
 }

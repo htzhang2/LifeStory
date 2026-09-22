@@ -3,6 +3,7 @@ import WelcomePage from "./pages/WelcomePage"
 import BasicInfoPage from "./pages/BasicInfoPage"
 import QuestionPage from "./pages/QuestionPage"
 import { StoryProvider } from "./context/StoryContext"
+import StoryPage from "./pages/StoryPage"
 
 function App() {
   return (
@@ -16,7 +17,9 @@ function App() {
           />
           <Route
             path="/question/:questionNumber"
-            element={<QuestionPage />} />
+            element={<QuestionPage />}
+          />
+          <Route path="/story" element={<StoryPage />} />
         </Routes>
       </BrowserRouter>
     </StoryProvider>

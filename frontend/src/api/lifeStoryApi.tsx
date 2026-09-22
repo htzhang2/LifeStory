@@ -73,3 +73,46 @@ export async function createLifeStory(
 
   return response.json()
 }
+
+export type Chapter = {
+  id: number
+  lifeStoryId: number
+  chapterNumber: number
+  title: string
+  content: string
+  createdAt: string
+  updatedAt: string
+}
+
+export async function generateChapter(
+  storyId: number,
+  chapterNumber: number
+): Promise<Chapter> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/chapters/${chapterNumber}/generate`,
+    {
+      method: "POST",
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to generate chapter")
+  }
+
+  return response.json()
+}
+
+export async function getChapter(
+  storyId: number,
+  chapterNumber: number
+): Promise<Chapter> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/chapters/${chapterNumber}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to get chapter")
+  }
+
+  return response.json()
+}
