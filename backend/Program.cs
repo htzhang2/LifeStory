@@ -2,6 +2,7 @@ using backend.Data;
 using backend.Service;
 using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
+using OpenAI.Audio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +27,13 @@ builder.Services.AddSingleton<ChatClient>(_ =>
         apiKey: ApiKey
 ));
 
-builder.Services.AddScoped<OpenAiStoryService>();
+builder.Services.AddSingleton<AudioClient>(_ =>
+    new AudioClient(
+        model: "whisper-1",
+        apiKey: ApiKey));
 
+builder.Services.AddScoped<OpenAiStoryService>();
+builder.Services.AddScoped<OpenAiTranscriptionService>();
 
 builder.Services.AddCors(options =>
 {

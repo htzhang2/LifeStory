@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useStory } from "../context/StoryContext"
 import { saveAnswer } from "../api/lifeStoryApi"
+import { transcribeAudio } from "../api/lifeStoryApi"
 
 type Question = {
   title: string
@@ -41,6 +42,11 @@ function QuestionPage() {
   
   const { storyId, answers, setAnswer } = useStory()
   const [localAnswer, setLocalAnswer] = useState("")
+  const [isRecording, setIsRecording] = useState(false)
+  const [mediaRecorder, setMediaRecorder] =
+    useState<MediaRecorder | null>(null)
+
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   useEffect(() => {
     setLocalAnswer(answers[currentQuestionNumber] ?? "")
@@ -71,6 +77,67 @@ function QuestionPage() {
 
   const totalQuestions = questions.length
   const progress = (currentQuestionNumber / totalQuestions) * 100
+
+  async function handleStartRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      })
+
+      const recorder = new MediaRecorder(stream)
+
+      const chunks: Blob[] = []
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data)
+        }
+      }
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, {
+          type: recorder.mimeType,
+        })
+
+        stream.getTracks().forEach((track) => track.stop())
+
+        console.log("Recorded audio:", audioBlob)
+        
+        // We'll send this to the backend in the next step.
+        try {
+          setIsTranscribing(true)
+
+          const text = await transcribeAudio(audioBlob)
+
+          setLocalAnswer(text)
+        } catch (error) {
+          console.error("Transcription failed:", error)
+          alert("Unable to transcribe your recording.")
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+
+      recorder.start()
+
+      setMediaRecorder(recorder)
+      setIsRecording(true)
+    } catch (error) {
+      console.error("Unable to access microphone:", error)
+      alert("Unable to access your microphone.")
+    }
+}
+
+  function handleStopRecording() {
+    if (!mediaRecorder) {
+      return
+    }
+
+    mediaRecorder.stop()
+
+    setMediaRecorder(null)
+    setIsRecording(false)
+  }
 
   async function handleContinue() {
     const trimmedAnswer = localAnswer.trim()
@@ -174,11 +241,26 @@ function QuestionPage() {
             </button>
 
             <button
-              className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-medium text-gray-700 hover:bg-gray-50"
-              onClick={() => console.log("Start speaking")}
+              type="button"
+              onClick={
+                isRecording
+                  ? handleStopRecording
+                  : handleStartRecording
+              }
+              className={`rounded-xl px-6 py-4 text-lg font-semibold ${
+                isRecording
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+              }`}
             >
-              🎤 Speak
+              {isRecording ? "⏹ Stop Recording" : "🎤 Speak"}
             </button>
+
+            {isTranscribing && (
+              <p className="text-lg text-gray-600">
+                Transcribing your recording...
+              </p>
+            )}
           </div>
 
           {/* Answer */}

@@ -116,3 +116,36 @@ export async function getChapter(
 
   return response.json()
 }
+
+export async function transcribeAudio(
+  audioBlob: Blob
+): Promise<string> {
+  const formData = new FormData()
+
+  const extension =
+    audioBlob.type.includes("webm")
+      ? "webm"
+      : "audio"
+
+  formData.append(
+    "audio",
+    audioBlob,
+    `recording.${extension}`
+  )
+
+  const response = await fetch(
+    `${API_BASE_URL}/transcription`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to transcribe audio")
+  }
+
+  const result = await response.json()
+
+  return result.text
+}
