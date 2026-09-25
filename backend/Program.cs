@@ -1,8 +1,10 @@
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using backend.Data;
 using backend.Service;
 using Microsoft.EntityFrameworkCore;
-using OpenAI.Chat;
 using OpenAI.Audio;
+using OpenAI.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,24 @@ builder.Services.AddDbContext<LifeStoryDbContext>(options =>
 
 string modelName = builder.Configuration["OpenAI:ModelName"];
 string ApiKey = builder.Configuration["OpenAI:ApiKey"];
+string storageAccountName = builder.Configuration["AzureStorage:AccountName"];
+
+if (string.IsNullOrWhiteSpace(storageAccountName))
+{
+    throw new InvalidOperationException(
+        "Azure Storage account name is not configured.");
+}
+
+// Add azure blob storage
+var storageAccountUrl =
+    $"https://{storageAccountName}.blob.core.windows.net";
+
+builder.Services.AddSingleton<BlobServiceClient>(_ =>
+    new BlobServiceClient(
+        new Uri(storageAccountUrl),
+        new DefaultAzureCredential()));
+
+builder.Services.AddSingleton<PhotoStorageService>();
 
 // Add services to the container.
 builder.Services.AddSingleton<ChatClient>(_ =>
