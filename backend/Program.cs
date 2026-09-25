@@ -19,26 +19,47 @@ builder.Services.AddDbContext<LifeStoryDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("LifeStoryDb")));
 
-string modelName = builder.Configuration["OpenAI:ModelName"];
-string ApiKey = builder.Configuration["OpenAI:ApiKey"];
-string storageAccountName = builder.Configuration["AzureStorage:AccountName"];
-
-if (string.IsNullOrWhiteSpace(storageAccountName))
-{
-    throw new InvalidOperationException(
-        "Azure Storage account name is not configured.");
-}
 
 // Add azure blob storage
-var storageAccountUrl =
-    $"https://{storageAccountName}.blob.core.windows.net";
+builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
+{
+    var configuration =
+        serviceProvider.GetRequiredService<IConfiguration>();
 
-builder.Services.AddSingleton<BlobServiceClient>(_ =>
-    new BlobServiceClient(
-        new Uri(storageAccountUrl),
-        new DefaultAzureCredential()));
+    var accountName =
+        configuration["AzureStorage:AccountName"];
+
+    var containerName =
+        configuration["AzureStorage:ContainerName"];
+
+    if (string.IsNullOrWhiteSpace(accountName))
+    {
+        throw new InvalidOperationException(
+            "Azure Storage account name is not configured.");
+    }
+
+    if (string.IsNullOrWhiteSpace(containerName))
+    {
+        throw new InvalidOperationException(
+            "Azure Storage container name is not configured.");
+    }
+
+    var accountUrl =
+        $"https://{accountName}.blob.core.windows.net";
+
+    var serviceClient = new BlobServiceClient(
+        new Uri(accountUrl),
+        new DefaultAzureCredential());
+
+    return serviceClient.GetBlobContainerClient(
+        containerName);
+});
 
 builder.Services.AddSingleton<PhotoStorageService>();
+
+
+string modelName = builder.Configuration["OpenAI:ModelName"];
+string ApiKey = builder.Configuration["OpenAI:ApiKey"];
 
 // Add services to the container.
 builder.Services.AddSingleton<ChatClient>(_ =>

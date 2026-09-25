@@ -4,18 +4,13 @@
 
     public class PhotoStorageService
     {
-        private readonly BlobServiceClient _blobServiceClient;
-        private readonly string _containerName;
+        private readonly BlobContainerClient _containerClient;
 
         public PhotoStorageService(
-            BlobServiceClient blobServiceClient,
+            BlobContainerClient containerClient,
             IConfiguration configuration)
         {
-            _blobServiceClient = blobServiceClient;
-
-            _containerName =
-                configuration["AzureStorage:ContainerName"]
-                ?? "story-photos";
+            _containerClient = containerClient;
         }
 
         public async Task<string> UploadAsync(
@@ -23,11 +18,7 @@
             string fileName,
             string contentType)
         {
-            var containerClient =
-                _blobServiceClient.GetBlobContainerClient(
-                    _containerName);
-
-            await containerClient.CreateIfNotExistsAsync();
+            await _containerClient.CreateIfNotExistsAsync();
 
             var extension = Path.GetExtension(fileName);
 
@@ -35,7 +26,7 @@
                 $"{Guid.NewGuid():N}{extension}";
 
             var blobClient =
-                containerClient.GetBlobClient(blobName);
+                _containerClient.GetBlobClient(blobName);
 
             await blobClient.UploadAsync(
                 stream,
