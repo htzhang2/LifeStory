@@ -21,7 +21,7 @@ builder.Services.AddDbContext<LifeStoryDbContext>(options =>
 
 
 // Add azure blob storage
-builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
+builder.Services.AddSingleton<BlobServiceClient>(serviceProvider =>
 {
     var configuration =
         serviceProvider.GetRequiredService<IConfiguration>();
@@ -29,19 +29,10 @@ builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
     var accountName =
         configuration["AzureStorage:AccountName"];
 
-    var containerName =
-        configuration["AzureStorage:ContainerName"];
-
     if (string.IsNullOrWhiteSpace(accountName))
     {
         throw new InvalidOperationException(
             "Azure Storage account name is not configured.");
-    }
-
-    if (string.IsNullOrWhiteSpace(containerName))
-    {
-        throw new InvalidOperationException(
-            "Azure Storage container name is not configured.");
     }
 
     var accountUrl =
@@ -51,8 +42,26 @@ builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
         new Uri(accountUrl),
         new DefaultAzureCredential());
 
-    return serviceClient.GetBlobContainerClient(
-        containerName);
+    return serviceClient;
+});
+
+builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
+{
+    var configuration =
+        serviceProvider.GetRequiredService<IConfiguration>();
+
+    var containerName =
+        configuration["AzureStorage:ContainerName"];
+
+    if (string.IsNullOrWhiteSpace(containerName))
+    {
+        throw new InvalidOperationException(
+            "Azure Storage container name is not configured.");
+    }
+
+    var blobServiceClient = serviceProvider.GetRequiredService<BlobServiceClient>();
+
+    return blobServiceClient.GetBlobContainerClient(containerName);
 });
 
 builder.Services.AddSingleton<PhotoStorageService>();

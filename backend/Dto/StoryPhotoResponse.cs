@@ -1,6 +1,6 @@
-﻿namespace backend.Models
+﻿namespace backend.Dto
 {
-    public class StoryPhoto
+    public class StoryPhotoResponse
     {
         public int Id { get; set; }
 

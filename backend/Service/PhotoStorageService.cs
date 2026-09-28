@@ -32,7 +32,7 @@
                 stream,
                 overwrite: false);
 
-            return blobClient.Uri.ToString();
+            return blobName;
         }
     }
 }
