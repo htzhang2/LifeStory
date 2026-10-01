@@ -1,5 +1,6 @@
 ﻿using backend.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace backend.Data
 {
@@ -16,6 +17,7 @@ namespace backend.Data
         public DbSet<HistoricalContext> HistoricalContexts => Set<HistoricalContext>();
         public DbSet<Chapter> Chapters => Set<Chapter>();
         public DbSet<StoryPhoto> StoryPhotos => Set<StoryPhoto>();
+        public DbSet<ChapterPhoto> ChapterPhotos => Set<ChapterPhoto>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +53,33 @@ namespace backend.Data
                 .WithMany()
                 .HasForeignKey(x => x.LifeStoryId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChapterPhoto>()
+                .HasOne<Chapter>()
+                .WithMany()
+                .HasForeignKey(x => x.ChapterId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChapterPhoto>()
+                .HasOne<StoryPhoto>()
+                .WithMany()
+                .HasForeignKey(x => x.StoryPhotoId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChapterPhoto>()
+                .HasIndex(x => new
+                {
+                    x.ChapterId,
+                    x.StoryPhotoId
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<ChapterPhoto>()
+                .HasIndex(x => new
+                {
+                    x.ChapterId,
+                    x.DisplayOrder
+                });
         }
 
     }

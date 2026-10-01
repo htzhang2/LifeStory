@@ -290,3 +290,74 @@ export async function deleteStoryPhoto(
     throw new Error("Failed to delete photo")
   }
 }
+
+export type ChapterPhoto = {
+  id: number
+  displayOrder: number
+  photoId: number
+  lifeStoryId: number
+  caption: string
+  memory: string
+  createdAt: string
+  updatedAt: string
+  url: string
+  urlExpiresAt: string
+}
+
+export async function getChapterPhotos(
+  storyId: number,
+  chapterNumber: number
+): Promise<ChapterPhoto[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/lifestories/${storyId}/chapters/${chapterNumber}/photos`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load chapter photos")
+  }
+
+  return response.json()
+}
+
+export async function addPhotoToChapter(
+  storyId: number,
+  chapterNumber: number,
+  photoId: number
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/lifestories/${storyId}/chapters/${chapterNumber}/photos/${photoId}`,
+    {
+      method: "POST",
+    }
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+
+    throw new Error(
+      message || "Failed to add photo to chapter"
+    )
+  }
+}
+
+export async function removePhotoFromChapter(
+  storyId: number,
+  chapterNumber: number,
+  photoId: number
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/lifestories/${storyId}/chapters/${chapterNumber}/photos/${photoId}`,
+    {
+      method: "DELETE",
+    }
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+
+    throw new Error(
+      message || "Failed to remove photo from chapter"
+    )
+  }
+}
+

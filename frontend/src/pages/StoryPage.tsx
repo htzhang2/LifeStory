@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom"
 import {
   generateChapter,
   getChapter,
+  getChapterPhotos,
+  removePhotoFromChapter,
   updateChapter,
+  type ChapterPhoto,
 } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
 
@@ -13,10 +16,12 @@ export default function StoryPage() {
 
   const [chapterTitle, setChapterTitle] = useState("")
   const [chapterContent, setChapterContent] = useState("")
+  const [chapterPhotos, setChapterPhotos] = useState<ChapterPhoto[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hasChapter, setHasChapter] = useState(false)
   const [error, setError] = useState("")
@@ -27,27 +32,37 @@ export default function StoryPage() {
       return
     }
 
-    async function loadChapter() {
+    const currentStoryId = storyId
+
+    async function loadStory() {
       try {
         setError("")
 
         const result = await getChapter(
-          storyId ?? 1,
+          currentStoryId,
           1
         )
 
         setChapterTitle(result.title)
         setChapterContent(result.content)
         setHasChapter(true)
+
+        const photos = await getChapterPhotos(
+          currentStoryId,
+          1
+        )
+
+        setChapterPhotos(photos)
       } catch {
-        // Chapter does not exist yet.
+        // The chapter may not exist yet.
         setHasChapter(false)
+        setChapterPhotos([])
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadChapter()
+    loadStory()
   }, [storyId])
 
   async function handleGenerate() {
@@ -68,8 +83,16 @@ export default function StoryPage() {
       setChapterContent(result.content)
       setHasChapter(true)
       setIsEditing(false)
+
+      const photos = await getChapterPhotos(
+        storyId,
+        1
+      )
+
+      setChapterPhotos(photos)
     } catch (err) {
       console.error(err)
+
       setError(
         "Failed to generate the chapter. Please try again."
       )
@@ -100,11 +123,45 @@ export default function StoryPage() {
       setIsEditing(false)
     } catch (err) {
       console.error(err)
+
       setError(
         "Failed to save the chapter. Please try again."
       )
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  async function handleRemovePhoto(
+    photoId: number
+  ) {
+    if (storyId === null) {
+      return
+    }
+
+    try {
+      setError("")
+      setIsRemovingPhoto(true)
+
+      await removePhotoFromChapter(
+        storyId,
+        1,
+        photoId
+      )
+
+      setChapterPhotos((previous) =>
+        previous.filter(
+          (photo) => photo.photoId !== photoId
+        )
+      )
+    } catch (err) {
+      console.error(err)
+
+      setError(
+        "Failed to remove the photo from the chapter. Please try again."
+      )
+    } finally {
+      setIsRemovingPhoto(false)
     }
   }
 
@@ -149,7 +206,6 @@ export default function StoryPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">
           My Life Story
@@ -160,14 +216,12 @@ export default function StoryPage() {
         </p>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           {error}
         </div>
       )}
 
-      {/* No chapter yet */}
       {!hasChapter && (
         <div className="rounded-xl border bg-white p-8 shadow-sm">
           <h2 className="text-2xl font-semibold">
@@ -192,10 +246,8 @@ export default function StoryPage() {
         </div>
       )}
 
-      {/* Chapter */}
       {hasChapter && (
         <div className="rounded-xl border bg-white p-8 shadow-sm">
-          {/* Title */}
           {isEditing ? (
             <input
               type="text"
@@ -211,7 +263,6 @@ export default function StoryPage() {
             </h2>
           )}
 
-          {/* Content */}
           {isEditing ? (
             <textarea
               value={chapterContent}
@@ -227,7 +278,57 @@ export default function StoryPage() {
             </div>
           )}
 
-          {/* Actions */}
+          {!isEditing && chapterPhotos.length > 0 && (
+            <div className="mt-12 border-t pt-10">
+              <h3 className="mb-6 text-2xl font-semibold">
+                Photos
+              </h3>
+
+              <div className="space-y-10">
+                {chapterPhotos.map((photo) => (
+                  <div key={photo.id}>
+                    <div className="overflow-hidden rounded-xl bg-gray-50">
+                      <img
+                        src={photo.url}
+                        alt={
+                          photo.caption ||
+                          "Life story photo"
+                        }
+                        className="max-h-[600px] w-full object-contain"
+                      />
+                    </div>
+
+                    {photo.caption && (
+                      <p className="mt-4 text-lg font-medium text-gray-900">
+                        {photo.caption}
+                      </p>
+                    )}
+
+                    {photo.memory && (
+                      <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-gray-600">
+                        {photo.memory}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={() =>
+                        handleRemovePhoto(
+                          photo.photoId
+                        )
+                      }
+                      disabled={isRemovingPhoto}
+                      className="mt-4 rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isRemovingPhoto
+                        ? "Removing..."
+                        : "Remove from Chapter"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-8 flex flex-wrap gap-3">
             {isEditing ? (
               <>
@@ -242,7 +343,9 @@ export default function StoryPage() {
                 </button>
 
                 <button
-                  onClick={() => setIsEditing(false)}
+                  onClick={() =>
+                    setIsEditing(false)
+                  }
                   disabled={isSaving}
                   className="rounded-lg border px-5 py-3 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -270,10 +373,22 @@ export default function StoryPage() {
               </>
             )}
           </div>
+
+          {!isEditing && (
+            <div className="mt-8 border-t pt-8">
+              <button
+                onClick={handlePhotos}
+                className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+              >
+                {chapterPhotos.length > 0
+                  ? "Manage Chapter Photos"
+                  : "Add Photos to Chapter"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Navigation */}
       <div className="mt-8 flex flex-wrap gap-3">
         <button
           onClick={handleEditMemories}
