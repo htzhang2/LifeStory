@@ -4,7 +4,6 @@ import {
   generateChapter,
   getChapter,
   getChapterPhotos,
-  removePhotoFromChapter,
   updateChapter,
   type ChapterPhoto,
 } from "../api/lifeStoryApi"
@@ -16,12 +15,12 @@ export default function StoryPage() {
 
   const [chapterTitle, setChapterTitle] = useState("")
   const [chapterContent, setChapterContent] = useState("")
-  const [chapterPhotos, setChapterPhotos] = useState<ChapterPhoto[]>([])
+  const [chapterPhotos, setChapterPhotos] =
+    useState<ChapterPhoto[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hasChapter, setHasChapter] = useState(false)
   const [error, setError] = useState("")
@@ -84,6 +83,8 @@ export default function StoryPage() {
       setHasChapter(true)
       setIsEditing(false)
 
+      // The backend automatically selects the photos
+      // that belong to this chapter.
       const photos = await getChapterPhotos(
         storyId,
         1
@@ -129,39 +130,6 @@ export default function StoryPage() {
       )
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  async function handleRemovePhoto(
-    photoId: number
-  ) {
-    if (storyId === null) {
-      return
-    }
-
-    try {
-      setError("")
-      setIsRemovingPhoto(true)
-
-      await removePhotoFromChapter(
-        storyId,
-        1,
-        photoId
-      )
-
-      setChapterPhotos((previous) =>
-        previous.filter(
-          (photo) => photo.photoId !== photoId
-        )
-      )
-    } catch (err) {
-      console.error(err)
-
-      setError(
-        "Failed to remove the photo from the chapter. Please try again."
-      )
-    } finally {
-      setIsRemovingPhoto(false)
     }
   }
 
@@ -223,27 +191,80 @@ export default function StoryPage() {
       )}
 
       {!hasChapter && (
-        <div className="rounded-xl border bg-white p-8 shadow-sm">
-          <h2 className="text-2xl font-semibold">
-            Create Your First Chapter
-          </h2>
+        <>
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold">
+              Prepare Your First Chapter
+            </h2>
 
-          <p className="mt-3 text-gray-600">
-            We will use the memories you provided during
-            the interview to create the beginning of your
-            autobiography.
-          </p>
+            <p className="mt-2 text-gray-600">
+              Review your memories and add any photos you
+              would like LifeStory to consider when creating
+              your chapter.
+            </p>
+          </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="mt-6 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isGenerating
-              ? "Creating Chapter..."
-              : "Create My Chapter"}
-          </button>
-        </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold">
+                Your Memories
+              </h3>
+
+              <p className="mt-3 leading-7 text-gray-600">
+                Review or edit the memories you provided
+                during the interview.
+              </p>
+
+              <button
+                onClick={handleEditMemories}
+                className="mt-5 rounded-lg border px-5 py-3 hover:bg-gray-50"
+              >
+                Edit My Memories
+              </button>
+            </div>
+
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold">
+                Your Photos
+              </h3>
+
+              <p className="mt-3 leading-7 text-gray-600">
+                Add photos and describe the memories behind
+                them. LifeStory will automatically select
+                photos that are relevant to this chapter.
+              </p>
+
+              <button
+                onClick={handlePhotos}
+                className="mt-5 rounded-lg border px-5 py-3 hover:bg-gray-50"
+              >
+                Add / Manage Photos
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-xl border bg-white p-8 text-center shadow-sm">
+            <h3 className="text-xl font-semibold">
+              Ready to create your chapter?
+            </h3>
+
+            <p className="mt-2 text-gray-600">
+              LifeStory will turn your memories into a
+              continuous first-person story and automatically
+              choose relevant photos.
+            </p>
+
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="mt-6 rounded-lg bg-blue-600 px-7 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isGenerating
+                ? "Creating Chapter..."
+                : "Create My Chapter"}
+            </button>
+          </div>
+        </>
       )}
 
       {hasChapter && (
@@ -309,20 +330,6 @@ export default function StoryPage() {
                         {photo.memory}
                       </p>
                     )}
-
-                    <button
-                      onClick={() =>
-                        handleRemovePhoto(
-                          photo.photoId
-                        )
-                      }
-                      disabled={isRemovingPhoto}
-                      className="mt-4 rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isRemovingPhoto
-                        ? "Removing..."
-                        : "Remove from Chapter"}
-                    </button>
                   </div>
                 ))}
               </div>
@@ -380,30 +387,30 @@ export default function StoryPage() {
                 onClick={handlePhotos}
                 className="rounded-lg border px-5 py-3 hover:bg-gray-50"
               >
-                {chapterPhotos.length > 0
-                  ? "Manage Chapter Photos"
-                  : "Add Photos to Chapter"}
+                Manage My Photos
               </button>
             </div>
           )}
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap gap-3">
-        <button
-          onClick={handleEditMemories}
-          className="rounded-lg border px-5 py-3 hover:bg-gray-50"
-        >
-          Edit My Memories
-        </button>
+      {hasChapter && (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            onClick={handleEditMemories}
+            className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+          >
+            Edit My Memories
+          </button>
 
-        <button
-          onClick={handlePhotos}
-          className="rounded-lg border px-5 py-3 hover:bg-gray-50"
-        >
-          My Photos
-        </button>
-      </div>
+          <button
+            onClick={handlePhotos}
+            className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+          >
+            My Photos
+          </button>
+        </div>
+      )}
     </div>
   )
 }
