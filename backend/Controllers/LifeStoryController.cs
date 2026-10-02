@@ -182,15 +182,36 @@ namespace backend.Controllers
                 return BadRequest("No interview answers found.");
             }
 
+            var photos = await _db.StoryPhotos
+                .Where(x => x.LifeStoryId == id)
+                .OrderBy(x => x.CreatedAt)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Caption,
+                    x.Memory
+                })
+                .ToListAsync();
+
             var chapterTitle = chapterNumber switch
             {
                 1 => "My Childhood",
                 _ => $"Chapter {chapterNumber}"
             };
 
-            var chapterContent = await _aiService.GenerateChapterAsync(
-                chapterTitle,
-                answers.Select(x => (x.Question, x.Answer)));
+            // Ask AI to generate the chapter and select relevant photos.
+            var result =
+                await _aiService.GenerateChapterAsync(
+                    chapterTitle,
+                    answers.Select(x => (
+                        x.Question,
+                        x.Answer
+                    )),
+                    photos.Select(x => (
+                        x.Id,
+                        x.Caption,
+                        x.Memory
+                    )));
 
             var chapter = await _db.Chapters
                 .FirstOrDefaultAsync(x =>
@@ -204,7 +225,7 @@ namespace backend.Controllers
                     LifeStoryId = id,
                     ChapterNumber = chapterNumber,
                     Title = chapterTitle,
-                    Content = chapterContent,
+                    Content = result.Content,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -214,11 +235,47 @@ namespace backend.Controllers
             else
             {
                 chapter.Title = chapterTitle;
-                chapter.Content = chapterContent;
+                chapter.Content = result.Content;
                 chapter.UpdatedAt = DateTime.UtcNow;
             }
 
             lifeStory.UpdatedAt = DateTime.UtcNow;
+
+            // Save first so a newly created Chapter gets its database ID.
+            await _db.SaveChangesAsync();
+
+            // Remove previous automatic photo assignments.
+            // This is important when the user regenerates the chapter.
+            var existingChapterPhotos =
+                await _db.ChapterPhotos
+                    .Where(x => x.ChapterId == chapter.Id)
+                    .ToListAsync();
+
+            _db.ChapterPhotos.RemoveRange(existingChapterPhotos);
+
+            // Only allow photo IDs that actually belong to this LifeStory.
+            var validPhotoIds = photos
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            var selectedPhotos = result.Photos
+                .Where(x => validPhotoIds.Contains(x.PhotoId))
+                .GroupBy(x => x.PhotoId)
+                .Select(x => x.First())
+                .OrderBy(x => x.DisplayOrder)
+                .ToList();
+
+            // Create the automatic ChapterPhoto associations.
+            for (var i = 0; i < selectedPhotos.Count; i++)
+            {
+                _db.ChapterPhotos.Add(
+                    new ChapterPhoto
+                    {
+                        ChapterId = chapter.Id,
+                        StoryPhotoId = selectedPhotos[i].PhotoId,
+                        DisplayOrder = i + 1
+                    });
+            }
 
             await _db.SaveChangesAsync();
 

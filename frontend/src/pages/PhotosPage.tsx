@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  addPhotoToChapter,
-  getChapterPhotos,
   getStoryPhotos,
   getStoryPhoto,
-  removePhotoFromChapter,
   updateStoryPhoto,
-  type ChapterPhoto,
   type StoryPhoto,
 } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
@@ -22,8 +18,6 @@ export default function PhotosPage() {
   const navigate = useNavigate()
 
   const [photos, setPhotos] = useState<PhotoWithUrl[]>([])
-  const [chapterPhotos, setChapterPhotos] =
-    useState<ChapterPhoto[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
@@ -35,8 +29,6 @@ export default function PhotosPage() {
   const [editMemory, setEditMemory] = useState("")
 
   const [isSaving, setIsSaving] = useState(false)
-  const [changingChapterPhotoId, setChangingChapterPhotoId] =
-    useState<number | null>(null)
 
   useEffect(() => {
     if (storyId === null) {
@@ -46,49 +38,33 @@ export default function PhotosPage() {
 
     const currentStoryId = storyId
 
-
     async function loadPhotos() {
-        try {
-            setError("")
+      try {
+        setError("")
 
-            const photoList = await getStoryPhotos(currentStoryId)
+        const photoList =
+          await getStoryPhotos(currentStoryId)
 
-            let chapterPhotoList: ChapterPhoto[] = []
+        const photosWithUrls: PhotoWithUrl[] = []
 
-            try {
-                chapterPhotoList = await getChapterPhotos(
-                    currentStoryId,
-                    1
-                )
-            } catch (err) {
-            // Chapter 1 may not exist yet.
-                console.warn(
-                    "Could not load Chapter 1 photos:",
-                    err
-                )
-            }
+        for (const photo of photoList) {
+          const photoWithUrl =
+            await getStoryPhoto(
+              currentStoryId,
+              photo.id
+            )
 
-            const photosWithUrls: PhotoWithUrl[] = []
-
-            for (const photo of photoList) {
-                const photoWithUrl =
-                    await getStoryPhoto(
-                        currentStoryId,
-                        photo.id
-                        )
-
-                photosWithUrls.push(photoWithUrl)
-            }
-
-            setPhotos(photosWithUrls)
-            setChapterPhotos(chapterPhotoList)
-        } catch (err) {
-            console.error("Failed to load photos:", err)
-
-            setError("Failed to load photos.")
-        } finally {
-            setIsLoading(false)
+          photosWithUrls.push(photoWithUrl)
         }
+
+        setPhotos(photosWithUrls)
+      } catch (err) {
+        console.error("Failed to load photos:", err)
+
+        setError("Failed to load photos.")
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     loadPhotos()
@@ -149,80 +125,6 @@ export default function PhotosPage() {
       )
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  function isPhotoInChapter(photoId: number) {
-    return chapterPhotos.some(
-      (photo) => photo.photoId === photoId
-    )
-  }
-
-  async function handleAddToChapter(photoId: number) {
-    if (storyId === null) {
-      setError("No life story was found.")
-      return
-    }
-
-    try {
-      setError("")
-      setChangingChapterPhotoId(photoId)
-
-      await addPhotoToChapter(
-        storyId,
-        1,
-        photoId
-      )
-
-      const updatedChapterPhotos =
-        await getChapterPhotos(
-          storyId,
-          1
-        )
-
-      setChapterPhotos(updatedChapterPhotos)
-    } catch (err) {
-      console.error(err)
-
-      setError(
-        "Failed to add the photo to Chapter 1. Please try again."
-      )
-    } finally {
-      setChangingChapterPhotoId(null)
-    }
-  }
-
-  async function handleRemoveFromChapter(
-    photoId: number
-  ) {
-    if (storyId === null) {
-      setError("No life story was found.")
-      return
-    }
-
-    try {
-      setError("")
-      setChangingChapterPhotoId(photoId)
-
-      await removePhotoFromChapter(
-        storyId,
-        1,
-        photoId
-      )
-
-      setChapterPhotos((previous) =>
-        previous.filter(
-          (photo) => photo.photoId !== photoId
-        )
-      )
-    } catch (err) {
-      console.error(err)
-
-      setError(
-        "Failed to remove the photo from Chapter 1. Please try again."
-      )
-    } finally {
-      setChangingChapterPhotoId(null)
     }
   }
 
@@ -311,12 +213,6 @@ export default function PhotosPage() {
             {photos.map((photo) => {
               const isEditing =
                 editingPhotoId === photo.id
-
-              const isInChapter =
-                isPhotoInChapter(photo.id)
-
-              const isChangingChapter =
-                changingChapterPhotoId === photo.id
 
               return (
                 <div
@@ -429,7 +325,7 @@ export default function PhotosPage() {
                           </p>
                         )}
 
-                        <div className="mt-5 flex flex-wrap gap-3">
+                        <div className="mt-5">
                           <button
                             onClick={() =>
                               handleEdit(photo)
@@ -438,47 +334,7 @@ export default function PhotosPage() {
                           >
                             Edit
                           </button>
-
-                          {isInChapter ? (
-                            <button
-                              onClick={() =>
-                                handleRemoveFromChapter(
-                                  photo.id
-                                )
-                              }
-                              disabled={
-                                isChangingChapter
-                              }
-                              className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {isChangingChapter
-                                ? "Removing..."
-                                : "Remove from Chapter 1"}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                handleAddToChapter(
-                                  photo.id
-                                )
-                              }
-                              disabled={
-                                isChangingChapter
-                              }
-                              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {isChangingChapter
-                                ? "Adding..."
-                                : "Add to Chapter 1"}
-                            </button>
-                          )}
                         </div>
-
-                        {isInChapter && (
-                          <p className="mt-3 text-sm text-green-700">
-                            ✓ Included in Chapter 1
-                          </p>
-                        )}
                       </>
                     )}
                   </div>
