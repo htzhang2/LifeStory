@@ -13,17 +13,19 @@ namespace backend.Controllers
     {
         private readonly LifeStoryDbContext _db;
         private readonly OpenAiStoryService _aiService;
-
+        private readonly ChapterPdfService _chapterPdfService;
 
         private readonly ILogger<LifeStoryController> _logger;
 
         public LifeStoryController(
             LifeStoryDbContext db,
             OpenAiStoryService aiService,
+            ChapterPdfService chapterPdfService,
             ILogger<LifeStoryController> logger)
         {
             _db = db;
             _aiService = aiService;
+            _chapterPdfService = chapterPdfService;
             _logger = logger;
         }
 
@@ -298,6 +300,51 @@ namespace backend.Controllers
             }
 
             return Ok(chapter);
+        }
+
+        [HttpGet("{id}/chapters/{chapterNumber}/pdf")]
+        public async Task<IActionResult> DownloadChapterPdf(
+            int id,
+            int chapterNumber)
+        {
+            var chapter = await _db.Chapters
+                .FirstOrDefaultAsync(x =>
+                    x.LifeStoryId == id &&
+                    x.ChapterNumber == chapterNumber);
+
+            if (chapter == null)
+            {
+                return NotFound("Chapter not found.");
+            }
+
+            var chapterPhotos = await (
+                from cp in _db.ChapterPhotos
+                join sp in _db.StoryPhotos
+                    on cp.StoryPhotoId equals sp.Id
+                where cp.ChapterId == chapter.Id
+                      && sp.LifeStoryId == id
+                orderby cp.DisplayOrder
+                select new ChapterPdfPhoto
+                {
+                    DisplayOrder = cp.DisplayOrder,
+                    OriginalBlobName = sp.OriginalBlobName,
+                    Caption = sp.Caption,
+                    Memory = sp.Memory
+                }
+            ).ToListAsync();
+
+            var pdf =
+                await _chapterPdfService.GenerateAsync(
+                    chapter,
+                    chapterPhotos);
+
+            var fileName =
+                $"LifeStory-Chapter-{chapter.ChapterNumber}.pdf";
+
+            return File(
+                pdf,
+                "application/pdf",
+                fileName);
         }
     }
 }

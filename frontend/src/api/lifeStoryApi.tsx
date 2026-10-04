@@ -319,3 +319,23 @@ export async function getChapterPhotos(
   return response.json()
 }
 
+
+export async function downloadChapterPdf(
+  storyId: number,
+  chapterNumber: number
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/chapters/${chapterNumber}/pdf`
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+
+    throw new Error(
+      message || "Failed to download chapter PDF"
+    )
+  }
+
+  return response.blob()
+}
+

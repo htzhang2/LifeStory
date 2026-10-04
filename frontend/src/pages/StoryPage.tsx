@@ -5,6 +5,7 @@ import {
   getChapter,
   getChapterPhotos,
   updateChapter,
+  downloadChapterPdf,
   type ChapterPhoto,
 } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
@@ -99,6 +100,39 @@ export default function StoryPage() {
       )
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (storyId === null) {
+      return
+    }
+
+    try {
+      setError("")
+
+      const blob = await downloadChapterPdf(
+        storyId,
+        1
+      )
+
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "My-Life-Story-Chapter-1.pdf"
+
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+
+      setError(
+        "Failed to download the chapter PDF. Please try again."
+      )
     }
   }
 
@@ -376,6 +410,13 @@ export default function StoryPage() {
                   {isGenerating
                     ? "Regenerating..."
                     : "Regenerate"}
+                </button>
+
+                <button
+                  onClick={handleDownloadPdf}
+                  className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+                >
+                  Download PDF
                 </button>
               </>
             )}

@@ -34,5 +34,13 @@
 
             return blobName;
         }
+
+        public async Task<byte[]> DownloadAsync(string blobName)
+        {
+            var blobClient = _containerClient.GetBlobClient(blobName);
+            var response = await blobClient.DownloadContentAsync();
+            
+            return response.Value.Content.ToArray();
+        }
     }
 }

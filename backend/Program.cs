@@ -5,6 +5,9 @@ using backend.Service;
 using Microsoft.EntityFrameworkCore;
 using OpenAI.Audio;
 using OpenAI.Chat;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +21,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<LifeStoryDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("LifeStoryDb")));
-
 
 // Add azure blob storage
 builder.Services.AddSingleton<BlobServiceClient>(serviceProvider =>
@@ -64,8 +66,9 @@ builder.Services.AddSingleton<BlobContainerClient>(serviceProvider =>
     return blobServiceClient.GetBlobContainerClient(containerName);
 });
 
-builder.Services.AddSingleton<PhotoStorageService>();
+builder.Services.AddScoped<PhotoStorageService>();
 
+builder.Services.AddScoped<ChapterPdfService>();
 
 string modelName = builder.Configuration["OpenAI:ModelName"];
 string ApiKey = builder.Configuration["OpenAI:ApiKey"];
