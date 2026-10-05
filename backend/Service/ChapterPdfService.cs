@@ -50,12 +50,14 @@ namespace backend.Service
                                 .FontSize(12)
                                 .LineHeight(1.5f));
 
+                        // Header
                         page.Header()
                             .AlignCenter()
                             .Text(chapter.Title)
                             .FontSize(24)
                             .Bold();
 
+                        // Content
                         page.Content()
                             .PaddingVertical(20)
                             .Column(column =>
@@ -69,11 +71,14 @@ namespace backend.Service
                                 // Photos
                                 foreach (var photo in photos)
                                 {
+                                    // Start every photo on a new page
                                     column.Item()
-                                        .EnsureSpace(500)
+                                        .PageBreak();
+
+                                    column.Item()
                                         .Column(photoColumn =>
                                         {
-                                            photoColumn.Spacing(10);
+                                            photoColumn.Spacing(12);
 
                                             // Photo
                                             photoColumn.Item()
@@ -88,8 +93,9 @@ namespace backend.Service
                                                 photo.Caption))
                                             {
                                                 photoColumn.Item()
+                                                    .PaddingTop(8)
                                                     .Text(photo.Caption)
-                                                    .FontSize(13)
+                                                    .FontSize(16)
                                                     .Bold()
                                                     .AlignCenter();
                                             }
@@ -99,14 +105,17 @@ namespace backend.Service
                                                 photo.Memory))
                                             {
                                                 photoColumn.Item()
+                                                    .PaddingTop(4)
                                                     .Text(photo.Memory)
-                                                    .FontSize(11)
-                                                    .LineHeight(1.5f);
+                                                    .FontSize(12)
+                                                    .LineHeight(1.6f)
+                                                    .AlignCenter();
                                             }
                                         });
                                 }
                             });
 
+                        // Footer
                         page.Footer()
                             .AlignCenter()
                             .Text(text =>
@@ -119,6 +128,7 @@ namespace backend.Service
 
             return document.GeneratePdf();
         }
+
 
         private class PdfPhoto
         {
