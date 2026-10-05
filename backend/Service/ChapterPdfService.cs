@@ -37,54 +37,81 @@ namespace backend.Service
                     });
             }
 
+            var paragraphs = chapter.Content
+                .Split(
+                    new[] { "\r\n\r\n", "\n\n" },
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
             var document =
                 Document.Create(container =>
                 {
                     container.Page(page =>
                     {
                         page.Size(PageSizes.A4);
-                        page.Margin(2, Unit.Centimetre);
+
+                        page.MarginHorizontal(
+                            2.2f,
+                            Unit.Centimetre);
+
+                        page.MarginVertical(
+                            2.5f,
+                            Unit.Centimetre);
 
                         page.DefaultTextStyle(
                             style => style
                                 .FontSize(12)
-                                .LineHeight(1.5f));
+                                .LineHeight(1.65f));
 
                         // Header
                         page.Header()
+                            .PaddingBottom(10)
                             .AlignCenter()
                             .Text(chapter.Title)
-                            .FontSize(24)
-                            .Bold();
+                            .FontSize(10)
+                            .FontColor(Colors.Grey.Darken1);
 
-                        // Content
                         page.Content()
-                            .PaddingVertical(20)
                             .Column(column =>
                             {
-                                column.Spacing(25);
+                                column.Spacing(18);
+
+                                // Chapter title
+                                column.Item()
+                                    .PaddingTop(20)
+                                    .PaddingBottom(25)
+                                    .AlignCenter()
+                                    .Text(chapter.Title)
+                                    .FontSize(30)
+                                    .Bold();
 
                                 // Chapter text
-                                column.Item()
-                                    .Text(chapter.Content);
+                                foreach (var paragraph in paragraphs)
+                                {
+                                    column.Item()
+                                        .Text(paragraph)
+                                        .FontSize(12)
+                                        .LineHeight(1.7f);
+                                }
 
                                 // Photos
                                 foreach (var photo in photos)
                                 {
-                                    // Start every photo on a new page
                                     column.Item()
                                         .PageBreak();
 
                                     column.Item()
                                         .Column(photoColumn =>
                                         {
-                                            photoColumn.Spacing(12);
+                                            photoColumn.Spacing(14);
 
                                             // Photo
                                             photoColumn.Item()
                                                 .AlignCenter()
-                                                .Width(16, Unit.Centimetre)
-                                                .MaxHeight(500)
+                                                .Width(15.5f, Unit.Centimetre)
+                                                .MaxHeight(480)
                                                 .Image(photo.ImageBytes)
                                                 .FitArea();
 
@@ -93,9 +120,10 @@ namespace backend.Service
                                                 photo.Caption))
                                             {
                                                 photoColumn.Item()
-                                                    .PaddingTop(8)
+                                                    .PaddingTop(12)
+                                                    .PaddingHorizontal(15)
                                                     .Text(photo.Caption)
-                                                    .FontSize(16)
+                                                    .FontSize(17)
                                                     .Bold()
                                                     .AlignCenter();
                                             }
@@ -106,9 +134,10 @@ namespace backend.Service
                                             {
                                                 photoColumn.Item()
                                                     .PaddingTop(4)
+                                                    .PaddingHorizontal(20)
                                                     .Text(photo.Memory)
                                                     .FontSize(12)
-                                                    .LineHeight(1.6f)
+                                                    .LineHeight(1.7f)
                                                     .AlignCenter();
                                             }
                                         });
@@ -117,18 +146,19 @@ namespace backend.Service
 
                         // Footer
                         page.Footer()
+                            .PaddingTop(10)
                             .AlignCenter()
                             .Text(text =>
                             {
-                                text.Span("Page ");
+                                text.Span("— ");
                                 text.CurrentPageNumber();
+                                text.Span(" —");
                             });
                     });
                 });
 
             return document.GeneratePdf();
         }
-
 
         private class PdfPhoto
         {
