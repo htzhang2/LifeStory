@@ -60,40 +60,48 @@ namespace backend.Service
                             .PaddingVertical(20)
                             .Column(column =>
                             {
-                                column.Spacing(20);
+                                column.Spacing(25);
 
+                                // Chapter text
                                 column.Item()
                                     .Text(chapter.Content);
 
+                                // Photos
                                 foreach (var photo in photos)
                                 {
                                     column.Item()
-                                        .PaddingTop(20)
+                                        .EnsureSpace(500)
                                         .Column(photoColumn =>
                                         {
-                                            photoColumn.Spacing(8);
+                                            photoColumn.Spacing(10);
 
+                                            // Photo
                                             photoColumn.Item()
                                                 .AlignCenter()
-                                                .MaxHeight(450)
+                                                .Width(16, Unit.Centimetre)
+                                                .MaxHeight(500)
                                                 .Image(photo.ImageBytes)
                                                 .FitArea();
 
+                                            // Caption
                                             if (!string.IsNullOrWhiteSpace(
                                                 photo.Caption))
                                             {
                                                 photoColumn.Item()
                                                     .Text(photo.Caption)
                                                     .FontSize(13)
-                                                    .Bold();
+                                                    .Bold()
+                                                    .AlignCenter();
                                             }
 
+                                            // Memory
                                             if (!string.IsNullOrWhiteSpace(
                                                 photo.Memory))
                                             {
                                                 photoColumn.Item()
                                                     .Text(photo.Memory)
-                                                    .FontSize(11);
+                                                    .FontSize(11)
+                                                    .LineHeight(1.5f);
                                             }
                                         });
                                 }
@@ -121,5 +129,4 @@ namespace backend.Service
             public string Memory { get; set; } = string.Empty;
         }
     }
-
 }
