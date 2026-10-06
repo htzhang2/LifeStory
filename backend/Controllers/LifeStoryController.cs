@@ -169,8 +169,18 @@ namespace backend.Controllers
                 return NotFound("Life story not found.");
             }
 
+            var definition = ChapterDefinitions.GetChapter(chapterNumber);
+            
+            if (definition == null)
+            {
+                return NotFound("Chapter definition not found."); 
+            }
+
             var answers = await _db.InterviewAnswers
-                .Where(x => x.LifeStoryId == id)
+                .Where(
+                    x => x.LifeStoryId == id &&
+                    x.QuestionNumber >= definition.StartQuestion && 
+                    x.QuestionNumber <= definition.EndQuestion)
                 .OrderBy(x => x.QuestionNumber)
                 .Select(x => new
                 {
@@ -195,11 +205,7 @@ namespace backend.Controllers
                 })
                 .ToListAsync();
 
-            var chapterTitle = chapterNumber switch
-            {
-                1 => "My Childhood",
-                _ => $"Chapter {chapterNumber}"
-            };
+            var chapterTitle = definition.Title;
 
             // Ask AI to generate the chapter and select relevant photos.
             var result =
@@ -282,6 +288,26 @@ namespace backend.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(chapter);
+        }
+
+        [HttpGet("{id}/chapters")]
+        public async Task<ActionResult<IEnumerable<Chapter>>> GetChapters(
+            int id)
+        {
+            var lifeStoryExists =
+                await _db.LifeStories.AnyAsync(x => x.Id == id);
+
+            if (!lifeStoryExists)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            var chapters = await _db.Chapters
+                .Where(x => x.LifeStoryId == id)
+                .OrderBy(x => x.ChapterNumber)
+                .ToListAsync();
+
+            return Ok(chapters);
         }
 
         [HttpGet("{id}/chapters/{chapterNumber}")]

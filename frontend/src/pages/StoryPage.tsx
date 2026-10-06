@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom"
 import {
   generateChapter,
   getChapter,
+  getChapterDefinitions,
   getChapterPhotos,
+  getChapters,
   updateChapter,
-  downloadChapterPdf,
+  type Chapter,
+  type ChapterDefinition,
   type ChapterPhoto,
 } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
@@ -14,8 +17,18 @@ export default function StoryPage() {
   const { storyId } = useStory()
   const navigate = useNavigate()
 
+  const [definitions, setDefinitions] =
+    useState<ChapterDefinition[]>([])
+
+  const [chapters, setChapters] =
+    useState<Chapter[]>([])
+
+  const [selectedChapterNumber, setSelectedChapterNumber] =
+    useState<number | null>(null)
+
   const [chapterTitle, setChapterTitle] = useState("")
   const [chapterContent, setChapterContent] = useState("")
+
   const [chapterPhotos, setChapterPhotos] =
     useState<ChapterPhoto[]>([])
 
@@ -23,7 +36,7 @@ export default function StoryPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [hasChapter, setHasChapter] = useState(false)
+
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -38,25 +51,52 @@ export default function StoryPage() {
       try {
         setError("")
 
-        const result = await getChapter(
-          currentStoryId,
-          1
-        )
+        const [
+          chapterDefinitions,
+          existingChapters,
+        ] = await Promise.all([
+          getChapterDefinitions(),
+          getChapters(currentStoryId),
+        ])
 
-        setChapterTitle(result.title)
-        setChapterContent(result.content)
-        setHasChapter(true)
+        setDefinitions(chapterDefinitions)
+        setChapters(existingChapters)
 
-        const photos = await getChapterPhotos(
-          currentStoryId,
-          1
-        )
+        if (chapterDefinitions.length > 0) {
+          const firstChapter =
+            chapterDefinitions[0]
 
-        setChapterPhotos(photos)
-      } catch {
-        // The chapter may not exist yet.
-        setHasChapter(false)
-        setChapterPhotos([])
+          setSelectedChapterNumber(
+            firstChapter.chapterNumber
+          )
+
+          const existingChapter =
+            existingChapters.find(
+              x =>
+                x.chapterNumber ===
+                firstChapter.chapterNumber
+            )
+
+          if (existingChapter) {
+            setChapterTitle(existingChapter.title)
+            setChapterContent(existingChapter.content)
+
+            const photos =
+              await getChapterPhotos(
+                currentStoryId,
+                firstChapter.chapterNumber
+              )
+
+            setChapterPhotos(photos)
+          } else {
+            setChapterTitle("")
+            setChapterContent("")
+            setChapterPhotos([])
+          }
+        }
+      } catch (err) {
+        console.error(err)
+        setError("Failed to load your story.")
       } finally {
         setIsLoading(false)
       }
@@ -65,8 +105,56 @@ export default function StoryPage() {
     loadStory()
   }, [storyId])
 
-  async function handleGenerate() {
+  async function handleSelectChapter(
+    chapterNumber: number
+  ) {
     if (storyId === null) {
+      return
+    }
+
+    try {
+      setError("")
+      setSelectedChapterNumber(chapterNumber)
+      setIsEditing(false)
+
+      const existingChapter =
+        chapters.find(
+          x => x.chapterNumber === chapterNumber
+        )
+
+      if (!existingChapter) {
+        setChapterTitle("")
+        setChapterContent("")
+        setChapterPhotos([])
+        return
+      }
+
+      const result = await getChapter(
+        storyId,
+        chapterNumber
+      )
+
+      setChapterTitle(result.title)
+      setChapterContent(result.content)
+
+      const photos =
+        await getChapterPhotos(
+          storyId,
+          chapterNumber
+        )
+
+      setChapterPhotos(photos)
+    } catch (err) {
+      console.error(err)
+      setError("Failed to load the chapter.")
+    }
+  }
+
+  async function handleGenerate() {
+    if (
+      storyId === null ||
+      selectedChapterNumber === null
+    ) {
       return
     }
 
@@ -76,22 +164,25 @@ export default function StoryPage() {
 
       const result = await generateChapter(
         storyId,
-        1
+        selectedChapterNumber
       )
 
       setChapterTitle(result.title)
       setChapterContent(result.content)
-      setHasChapter(true)
       setIsEditing(false)
 
-      // The backend automatically selects the photos
-      // that belong to this chapter.
-      const photos = await getChapterPhotos(
-        storyId,
-        1
-      )
+      const photos =
+        await getChapterPhotos(
+          storyId,
+          selectedChapterNumber
+        )
 
       setChapterPhotos(photos)
+
+      const updatedChapters =
+        await getChapters(storyId)
+
+      setChapters(updatedChapters)
     } catch (err) {
       console.error(err)
 
@@ -103,41 +194,11 @@ export default function StoryPage() {
     }
   }
 
-  async function handleDownloadPdf() {
-    if (storyId === null) {
-      return
-    }
-
-    try {
-      setError("")
-
-      const blob = await downloadChapterPdf(
-        storyId,
-        1
-      )
-
-      const url = URL.createObjectURL(blob)
-
-      const link = document.createElement("a")
-      link.href = url
-      link.download = "My-Life-Story-Chapter-1.pdf"
-
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error(err)
-
-      setError(
-        "Failed to download the chapter PDF. Please try again."
-      )
-    }
-  }
-
   async function handleSave() {
-    if (storyId === null) {
+    if (
+      storyId === null ||
+      selectedChapterNumber === null
+    ) {
       return
     }
 
@@ -147,15 +208,19 @@ export default function StoryPage() {
 
       const result = await updateChapter(
         storyId,
-        1,
+        selectedChapterNumber,
         chapterTitle,
         chapterContent
       )
 
       setChapterTitle(result.title)
       setChapterContent(result.content)
-      setHasChapter(true)
       setIsEditing(false)
+
+      const updatedChapters =
+        await getChapters(storyId)
+
+      setChapters(updatedChapters)
     } catch (err) {
       console.error(err)
 
@@ -177,7 +242,7 @@ export default function StoryPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">
           Loading your story...
         </p>
@@ -187,271 +252,336 @@ export default function StoryPage() {
 
   if (storyId === null) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="text-2xl font-bold">
-          No Life Story Found
-        </h1>
-
-        <p className="mt-3 text-gray-600">
-          Please start a new life story first.
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">
+          Please start your story first.
         </p>
-
-        <button
-          onClick={() => navigate("/")}
-          className="mt-6 rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
-        >
-          Start a Life Story
-        </button>
       </div>
     )
   }
 
+  const selectedDefinition =
+    definitions.find(
+      x =>
+        x.chapterNumber ===
+        selectedChapterNumber
+    ) ?? null
+
+  const selectedChapter =
+    chapters.find(
+      x =>
+        x.chapterNumber ===
+        selectedChapterNumber
+    ) ?? null
+
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          My Life Story
-        </h1>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="mx-auto max-w-4xl px-6">
 
-        <p className="mt-2 text-gray-600">
-          Your memories are becoming a story.
-        </p>
-      </div>
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Your Story
+          </h1>
 
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}
+          <p className="mt-2 text-gray-600">
+            Turn your memories into chapters of your
+            life story.
+          </p>
         </div>
-      )}
 
-      {!hasChapter && (
-        <>
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold">
-              Prepare Your First Chapter
-            </h2>
-
-            <p className="mt-2 text-gray-600">
-              Review your memories and add any photos you
-              would like LifeStory to consider when creating
-              your chapter.
-            </p>
+        {/* Error */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+            {error}
           </div>
+        )}
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h3 className="text-xl font-semibold">
-                Your Memories
-              </h3>
+        {/* Chapter List */}
+        <div className="mb-10">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900">
+            Chapters
+          </h2>
 
-              <p className="mt-3 leading-7 text-gray-600">
-                Review or edit the memories you provided
-                during the interview.
-              </p>
+          <div className="space-y-4">
+            {definitions.map(definition => {
+              const chapter =
+                chapters.find(
+                  x =>
+                    x.chapterNumber ===
+                    definition.chapterNumber
+                )
 
-              <button
-                onClick={handleEditMemories}
-                className="mt-5 rounded-lg border px-5 py-3 hover:bg-gray-50"
-              >
-                Edit My Memories
-              </button>
-            </div>
+              const isSelected =
+                selectedChapterNumber ===
+                definition.chapterNumber
 
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h3 className="text-xl font-semibold">
-                Your Photos
-              </h3>
+              return (
+                <div
+                  key={definition.chapterNumber}
+                  className={`rounded-xl border bg-white p-5 ${
+                    isSelected
+                      ? "border-gray-900"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-              <p className="mt-3 leading-7 text-gray-600">
-                Add photos and describe the memories behind
-                them. LifeStory will automatically select
-                photos that are relevant to this chapter.
-              </p>
+                    <div>
+                      <div className="text-sm text-gray-500">
+                        Chapter{" "}
+                        {definition.chapterNumber}
+                      </div>
 
-              <button
-                onClick={handlePhotos}
-                className="mt-5 rounded-lg border px-5 py-3 hover:bg-gray-50"
-              >
-                Add / Manage Photos
-              </button>
-            </div>
-          </div>
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {definition.title}
+                      </h3>
 
-          <div className="mt-8 rounded-xl border bg-white p-8 text-center shadow-sm">
-            <h3 className="text-xl font-semibold">
-              Ready to create your chapter?
-            </h3>
-
-            <p className="mt-2 text-gray-600">
-              LifeStory will turn your memories into a
-              continuous first-person story and automatically
-              choose relevant photos.
-            </p>
-
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="mt-6 rounded-lg bg-blue-600 px-7 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isGenerating
-                ? "Creating Chapter..."
-                : "Create My Chapter"}
-            </button>
-          </div>
-        </>
-      )}
-
-      {hasChapter && (
-        <div className="rounded-xl border bg-white p-8 shadow-sm">
-          {isEditing ? (
-            <input
-              type="text"
-              value={chapterTitle}
-              onChange={(e) =>
-                setChapterTitle(e.target.value)
-              }
-              className="mb-6 w-full rounded-lg border px-4 py-3 text-2xl font-semibold outline-none focus:border-blue-500"
-            />
-          ) : (
-            <h2 className="mb-6 text-3xl font-semibold">
-              {chapterTitle}
-            </h2>
-          )}
-
-          {isEditing ? (
-            <textarea
-              value={chapterContent}
-              onChange={(e) =>
-                setChapterContent(e.target.value)
-              }
-              rows={20}
-              className="w-full rounded-lg border px-4 py-3 leading-7 outline-none focus:border-blue-500"
-            />
-          ) : (
-            <div className="whitespace-pre-wrap text-lg leading-8 text-gray-800">
-              {chapterContent}
-            </div>
-          )}
-
-          {!isEditing && chapterPhotos.length > 0 && (
-            <div className="mt-12 border-t pt-10">
-              <h3 className="mb-6 text-2xl font-semibold">
-                Photos
-              </h3>
-
-              <div className="space-y-10">
-                {chapterPhotos.map((photo) => (
-                  <div key={photo.id}>
-                    <div className="overflow-hidden rounded-xl bg-gray-50">
-                      <img
-                        src={photo.url}
-                        alt={
-                          photo.caption ||
-                          "Life story photo"
-                        }
-                        className="max-h-[600px] w-full object-contain"
-                      />
+                      <p className="mt-1 text-sm text-gray-500">
+                        Questions{" "}
+                        {definition.startQuestion}
+                        {"–"}
+                        {definition.endQuestion}
+                      </p>
                     </div>
 
-                    {photo.caption && (
-                      <p className="mt-4 text-lg font-medium text-gray-900">
-                        {photo.caption}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3">
 
-                    {photo.memory && (
-                      <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-gray-600">
-                        {photo.memory}
-                      </p>
-                    )}
+                      {chapter ? (
+                        <span className="text-sm font-medium text-green-600">
+                          Created
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">
+                          Not created
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() =>
+                          handleSelectChapter(
+                            definition.chapterNumber
+                          )
+                        }
+                        className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                      >
+                        {chapter
+                          ? "Read Chapter"
+                          : "Create Chapter"}
+                      </button>
+
+                    </div>
                   </div>
-                ))}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Selected Chapter */}
+        {selectedDefinition && (
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+
+            {/* Chapter Header */}
+            <div className="mb-6">
+              <div className="text-sm text-gray-500">
+                Chapter{" "}
+                {selectedDefinition.chapterNumber}
               </div>
+
+              <h2 className="text-2xl font-bold text-gray-900">
+                {selectedDefinition.title}
+              </h2>
             </div>
-          )}
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isSaving
-                    ? "Saving..."
-                    : "Save Chapter"}
-                </button>
-
-                <button
-                  onClick={() =>
-                    setIsEditing(false)
-                  }
-                  disabled={isSaving}
-                  className="rounded-lg border px-5 py-3 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700"
-                >
-                  Edit Chapter
-                </button>
+            {/* Chapter Does Not Exist */}
+            {!selectedChapter ? (
+              <div>
+                <p className="mb-6 text-gray-600">
+                  Your answers to questions{" "}
+                  {selectedDefinition.startQuestion}
+                  {"–"}
+                  {selectedDefinition.endQuestion}
+                  {" "}
+                  will be used to create this chapter.
+                </p>
 
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="rounded-lg border px-5 py-3 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-black px-6 py-3 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isGenerating
-                    ? "Regenerating..."
-                    : "Regenerate"}
+                    ? "Creating Chapter..."
+                    : "Create My Chapter"}
                 </button>
+              </div>
+            ) : (
+              <>
+                {/* Editing */}
+                {isEditing ? (
+                  <div className="space-y-4">
 
-                <button
-                  onClick={handleDownloadPdf}
-                  className="rounded-lg border px-5 py-3 hover:bg-gray-50"
-                >
-                  Download PDF
-                </button>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Chapter Title
+                      </label>
+
+                      <input
+                        value={chapterTitle}
+                        onChange={e =>
+                          setChapterTitle(
+                            e.target.value
+                          )
+                        }
+                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-gray-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Chapter
+                      </label>
+
+                      <textarea
+                        value={chapterContent}
+                        onChange={e =>
+                          setChapterContent(
+                            e.target.value
+                          )
+                        }
+                        rows={18}
+                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-gray-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="rounded-lg bg-black px-5 py-2 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {isSaving
+                          ? "Saving..."
+                          : "Save"}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          setIsEditing(false)
+                        }
+                        disabled={isSaving}
+                        className="rounded-lg border border-gray-300 px-5 py-2 font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Chapter Content */}
+                    <div className="prose max-w-none whitespace-pre-wrap text-gray-800">
+                      {chapterContent}
+                    </div>
+
+                    {/* Chapter Photos */}
+                    {chapterPhotos.length > 0 && (
+                      <div className="mt-10 border-t pt-8">
+
+                        <h3 className="mb-5 text-xl font-semibold text-gray-900">
+                          Photos
+                        </h3>
+
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                          {chapterPhotos.map(photo => (
+                            <div
+                              key={photo.id}
+                              className="overflow-hidden rounded-xl border border-gray-200 bg-white"
+                            >
+                              <img
+                                src={photo.url}
+                                alt={
+                                  photo.caption ||
+                                  "Story photo"
+                                }
+                                className="h-auto w-full object-cover"
+                              />
+
+                              {photo.caption && (
+                                <div className="p-4">
+                                  <p className="text-sm text-gray-600">
+                                    {photo.caption}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chapter Actions */}
+                    <div className="mt-8 flex flex-wrap gap-3 border-t pt-6">
+
+                      <button
+                        onClick={() =>
+                          setIsEditing(true)
+                        }
+                        className="rounded-lg border border-gray-300 px-5 py-2 font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit Chapter
+                      </button>
+
+                      <button
+                        onClick={handleGenerate}
+                        disabled={isGenerating}
+                        className="rounded-lg border border-gray-300 px-5 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {isGenerating
+                          ? "Regenerating..."
+                          : "Regenerate"}
+                      </button>
+
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
+        )}
 
-          {!isEditing && (
-            <div className="mt-8 border-t pt-8">
-              <button
-                onClick={handlePhotos}
-                className="rounded-lg border px-5 py-3 hover:bg-gray-50"
-              >
-                Manage My Photos
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        {/* Memories and Photos */}
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
 
-      {hasChapter && (
-        <div className="mt-8 flex flex-wrap gap-3">
           <button
             onClick={handleEditMemories}
-            className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+            className="rounded-xl border border-gray-200 bg-white p-5 text-left hover:border-gray-400"
           >
-            Edit My Memories
+            <h3 className="font-semibold text-gray-900">
+              Your Memories
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Edit your interview answers
+            </p>
           </button>
 
           <button
             onClick={handlePhotos}
-            className="rounded-lg border px-5 py-3 hover:bg-gray-50"
+            className="rounded-xl border border-gray-200 bg-white p-5 text-left hover:border-gray-400"
           >
-            My Photos
+            <h3 className="font-semibold text-gray-900">
+              Your Photos
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Add or manage your photos
+            </p>
           </button>
+
         </div>
-      )}
+
+      </div>
     </div>
   )
 }

@@ -84,6 +84,20 @@ export type Chapter = {
   updatedAt: string
 }
 
+export async function getChapters(
+  storyId: number
+): Promise<Chapter[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/chapters`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load chapters")
+  }
+
+  return response.json()
+}
+
 export async function generateChapter(
   storyId: number,
   chapterNumber: number
@@ -339,3 +353,25 @@ export async function downloadChapterPdf(
   return response.blob()
 }
 
+export type ChapterDefinition = {
+  chapterNumber: number
+  title: string
+  startQuestion: number
+  endQuestion: number
+}
+
+export async function getChapterDefinitions(): Promise<
+  ChapterDefinition[]
+> {
+  const response = await fetch(
+    `${API_BASE_URL}/chapter-definitions`
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to load chapter definitions"
+    )
+  }
+
+  return response.json()
+}

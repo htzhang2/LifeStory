@@ -29,6 +29,24 @@ const questions: Question[] = [
     description:
       "Tell us about your parents, brothers, sisters, grandparents, or other people who were important to you.",
   },
+  {
+    title: "Your school years",
+    question: "What do you remember about your school?",
+    description:
+      "Tell us about your school, teachers, classmates, or anything that made your school years memorable.",
+  },
+  {
+    title: "Your school friends",
+    question: "Who were your closest friends when you were young?",
+    description:
+      "Tell us about your friends, what you did together, and any memories that still stand out.",
+  },
+  {
+    title: "Growing up",
+    question: "What did you enjoy doing when you were a child?",
+    description:
+      "Think about games, hobbies, reading, sports, exploring, helping your family, or anything else you enjoyed.",
+  }
 ]
 
 function QuestionPage() {
