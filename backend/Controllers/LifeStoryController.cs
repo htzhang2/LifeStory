@@ -328,6 +328,40 @@ namespace backend.Controllers
             return Ok(chapter);
         }
 
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> DownloadStoryPdf(
+            int id)
+        {
+            var lifeStoryExists =
+                await _db.LifeStories.AnyAsync(x => x.Id == id);
+
+            if (!lifeStoryExists)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            var chapters = await _db.Chapters
+                .Where(x => x.LifeStoryId == id)
+                .OrderBy(x => x.ChapterNumber)
+                .ToListAsync();
+
+            if (chapters.Count == 0)
+            {
+                return BadRequest(
+                    "No chapters have been created yet.");
+            }
+
+            var pdfBytes =
+                await _chapterPdfService.GenerateStoryPdfAsync(
+                    id,
+                    chapters);
+
+            return File(
+                pdfBytes,
+                "application/pdf",
+                "My-Life-Story.pdf");
+        }
+
         [HttpGet("{id}/chapters/{chapterNumber}/pdf")]
         public async Task<IActionResult> DownloadChapterPdf(
             int id,

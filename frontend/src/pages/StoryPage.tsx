@@ -7,6 +7,7 @@ import {
   getChapterPhotos,
   getChapters,
   updateChapter,
+  downloadStoryPdf,
   type Chapter,
   type ChapterDefinition,
   type ChapterPhoto,
@@ -35,6 +36,7 @@ export default function StoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
   const [error, setError] = useState("")
@@ -229,6 +231,45 @@ export default function StoryPage() {
       )
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (storyId === null) {
+      return
+    }
+
+    try {
+      setError("")
+      setIsDownloading(true)
+
+      const blob =
+        await downloadStoryPdf(storyId)
+
+      const url =
+        window.URL.createObjectURL(blob)
+
+      const link =
+        document.createElement("a")
+
+      link.href = url
+      link.download = "My-Life-Story.pdf"
+
+      document.body.appendChild(link)
+
+      link.click()
+
+      link.remove()
+
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+
+      setError(
+        "Failed to download your story PDF. Please try again."
+      )
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -547,6 +588,36 @@ export default function StoryPage() {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* Download Complete Story */}
+        {chapters.length > 0 && (
+          <div className="mt-8 rounded-xl bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Your Complete Story
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Download all your created chapters and
+                  their photos as one PDF.
+                </p>
+              </div>
+
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+                className="rounded-lg bg-black px-5 py-2 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isDownloading
+                  ? "Preparing PDF..."
+                  : "Download My Story PDF"}
+              </button>
+
+            </div>
           </div>
         )}
 

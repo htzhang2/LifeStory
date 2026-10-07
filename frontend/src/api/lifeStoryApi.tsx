@@ -333,6 +333,22 @@ export async function getChapterPhotos(
   return response.json()
 }
 
+export async function downloadStoryPdf(
+  storyId: number
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/pdf`
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to download story PDF"
+    )
+  }
+
+  return response.blob()
+}
+
 
 export async function downloadChapterPdf(
   storyId: number,
