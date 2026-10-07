@@ -261,29 +261,54 @@ namespace backend.Controllers
 
             _db.ChapterPhotos.RemoveRange(existingChapterPhotos);
 
-            // Only allow photo IDs that actually belong to this LifeStory.
-            var validPhotoIds = photos
-                .Select(x => x.Id)
-                .ToHashSet();
-
-            var selectedPhotos = result.Photos
-                .Where(x => validPhotoIds.Contains(x.PhotoId))
-                .GroupBy(x => x.PhotoId)
-                .Select(x => x.First())
-                .OrderBy(x => x.DisplayOrder)
+            // AI-selected photo IDs
+            var selectedPhotoIds = result.Photos.Select(
+                x => x.PhotoId)
+                .Distinct()
                 .ToList();
 
+            // Load the actual StoryPhoto records belonging to this story.
+            var selectedPhotos = await _db.StoryPhotos
+                .Where(x => 
+                    x.LifeStoryId == id && 
+                    selectedPhotoIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id);
+
+            // Create ChapterPhoto records.
+            // Copy the photo information so PDF generation does not need 
+            // to join back to StoryPhoto.
+            var displayOrder = 1;
+
             // Create the automatic ChapterPhoto associations.
-            for (var i = 0; i < selectedPhotos.Count; i++)
+            foreach (var generatedPhoto in result.Photos)
             {
+                if (!selectedPhotos.TryGetValue(
+                    generatedPhoto.PhotoId,
+                    out var storyPhoto))
+                {
+                    continue;
+                }
+
                 _db.ChapterPhotos.Add(
                     new ChapterPhoto
                     {
+                        StoryId = id,
                         ChapterId = chapter.Id,
-                        StoryPhotoId = selectedPhotos[i].PhotoId,
-                        DisplayOrder = i + 1
+                        StoryPhotoId = storyPhoto.Id,
+
+                        OriginalBlobName =
+                            storyPhoto.OriginalBlobName,
+
+                        Caption =
+                            storyPhoto.Caption,
+
+                        Memory =
+                            storyPhoto.Memory,
+
+                        DisplayOrder = displayOrder++
                     });
             }
+
 
             await _db.SaveChangesAsync();
 
@@ -360,51 +385,6 @@ namespace backend.Controllers
                 pdfBytes,
                 "application/pdf",
                 "My-Life-Story.pdf");
-        }
-
-        [HttpGet("{id}/chapters/{chapterNumber}/pdf")]
-        public async Task<IActionResult> DownloadChapterPdf(
-            int id,
-            int chapterNumber)
-        {
-            var chapter = await _db.Chapters
-                .FirstOrDefaultAsync(x =>
-                    x.LifeStoryId == id &&
-                    x.ChapterNumber == chapterNumber);
-
-            if (chapter == null)
-            {
-                return NotFound("Chapter not found.");
-            }
-
-            var chapterPhotos = await (
-                from cp in _db.ChapterPhotos
-                join sp in _db.StoryPhotos
-                    on cp.StoryPhotoId equals sp.Id
-                where cp.ChapterId == chapter.Id
-                      && sp.LifeStoryId == id
-                orderby cp.DisplayOrder
-                select new ChapterPdfPhoto
-                {
-                    DisplayOrder = cp.DisplayOrder,
-                    OriginalBlobName = sp.OriginalBlobName,
-                    Caption = sp.Caption,
-                    Memory = sp.Memory
-                }
-            ).ToListAsync();
-
-            var pdf =
-                await _chapterPdfService.GenerateAsync(
-                    chapter,
-                    chapterPhotos);
-
-            var fileName =
-                $"LifeStory-Chapter-{chapter.ChapterNumber}.pdf";
-
-            return File(
-                pdf,
-                "application/pdf",
-                fileName);
         }
     }
 }
