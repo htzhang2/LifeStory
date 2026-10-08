@@ -4,7 +4,7 @@
 
 Instead of asking users to write an autobiography from scratch, LifeStory guides them through questions, collects memories and photos, and uses AI to turn them into organized autobiography chapters.
 
-![LifeStory](docs/screenshots/story-page.png)
+![LifeStory](screenshots/story-page.png)
 
 ## Features
 
@@ -28,7 +28,7 @@ Questions → Memories → Photos → AI Chapter Generation
 
 Users don't manually assign photos to chapters. During chapter generation, AI selects relevant photos based on their captions and memories.
 
-![Generated Chapter](docs/screenshots/chapter.png)
+![Generated Chapter](screenshots/chapter.png)
 
 ## Tech Stack
 
