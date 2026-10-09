@@ -236,7 +236,7 @@ namespace backend.Controllers
                 })
                 .ToListAsync();
 
-            var chapterTitle = definition.Title;
+            var chapterTitle = ChapterDefinitions.GetTitle(chapterNumber, lifeStory.ContentLanguage);
 
             // Ask AI to generate the chapter and select relevant photos.
             var result =

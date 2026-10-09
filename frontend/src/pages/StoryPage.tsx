@@ -449,7 +449,9 @@ export default function StoryPage() {
                       </div>
 
                       <h3 className="text-xl font-semibold text-gray-900">
-                        {definition.title}
+                        {contentLanguage === "zh-CN"
+                          ? definition.titleZhCn || definition.title
+                          : definition.title}
                       </h3>
 
                       <p className="mt-1 text-sm text-gray-500">
@@ -505,7 +507,9 @@ export default function StoryPage() {
               </div>
 
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedDefinition.title}
+                {contentLanguage === "zh-CN"
+                  ? selectedDefinition.titleZhCn || selectedDefinition.title
+                  : selectedDefinition.title}
               </h2>
             </div>
 

@@ -394,6 +394,7 @@ export async function downloadStoryPdf(
 export type ChapterDefinition = {
   chapterNumber: number
   title: string
+  titleZhCn: string
   startQuestion: number
   endQuestion: number
 }
