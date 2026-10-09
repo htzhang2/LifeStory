@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { createLifeStory } from "../api/lifeStoryApi"
+import { createLifeStory, type ContentLanguage } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
 
 function BasicInfoPage() {
@@ -11,6 +11,8 @@ function BasicInfoPage() {
   const [birthYear, setBirthYear] = useState("")
   const [birthPlace, setBirthPlace] = useState("")
   const [isCreating, setIsCreating] = useState(false)
+  const [contentLanguage, setContentLanguage] =
+    useState<ContentLanguage>("en")
 
   async function handleContinue() {
     const name = authorName.trim()
@@ -35,7 +37,8 @@ function BasicInfoPage() {
         "My Life Story",
         name,
         year,
-        place
+        place,
+        contentLanguage
       )
 
       setStoryId(story.id)
@@ -125,6 +128,33 @@ function BasicInfoPage() {
             />
           </div>
 
+
+          <div className="mt-8">
+            <label
+              htmlFor="contentLanguage"
+              className="block text-lg font-semibold text-gray-900"
+            >
+              What language would you like your story written in?
+            </label>
+
+            <select
+              id="contentLanguage"
+              value={contentLanguage}
+              onChange={(e) =>
+                setContentLanguage(e.target.value as ContentLanguage)
+              }
+              className="mt-3 w-full rounded-xl border border-gray-300 bg-white px-4 py-4 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="en">English</option>
+              <option value="zh-CN">简体中文 (Simplified Chinese)</option>
+            </select>
+
+            <p className="mt-2 text-sm text-gray-500">
+              This setting will control the language of your interview
+              questions, generated chapters, and PDFs.
+            </p>
+          </div>
+          
           <button
             className="mt-10 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             onClick={handleContinue}

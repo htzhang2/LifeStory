@@ -85,8 +85,12 @@ namespace backend.Controllers
         [HttpPost]
         public async Task<ActionResult<LifeStory>> Create(CreateLifeStoryRequest request)
         {
+            var contentLanguage =
+                request.ContentLanguage == "zh-CN" ? "zh-CN" : "en";
+
             var lifeStory = new LifeStory
             {
+                ContentLanguage = contentLanguage,
                 Title = request.Title,
                 AuthorName = request.AuthorName,
                 BirthYear = request.BirthYear,
@@ -96,6 +100,33 @@ namespace backend.Controllers
             };
 
             _db.LifeStories.Add(lifeStory);
+            await _db.SaveChangesAsync();
+
+            return Ok(lifeStory);
+        }
+
+        [HttpPut("{id}/language")]
+        public async Task<IActionResult> UpdateContentLanguage(
+            int id,
+            UpdateContentLanguageRequest request)
+        {
+            if (request.ContentLanguage != "en" &&
+                request.ContentLanguage != "zh-CN")
+            {
+                return BadRequest(
+                    "ContentLanguage must be 'en' or 'zh-CN'.");
+            }
+
+            var lifeStory = await _db.LifeStories.FindAsync(id);
+
+            if (lifeStory == null)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            lifeStory.ContentLanguage = request.ContentLanguage;
+            lifeStory.UpdatedAt = DateTime.UtcNow;
+
             await _db.SaveChangesAsync();
 
             return Ok(lifeStory);

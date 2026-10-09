@@ -4,6 +4,10 @@
     {
         public int Id { get; set; }
 
+        // Language used for questions, generated chapters, and PDFs.
+        // "en" = English, "zh-CN" = Simplified Chinese.
+        public string ContentLanguage { get; set; } = "en";
+
         public string Title { get; set; } = string.Empty;
 
         public string AuthorName { get; set; } = string.Empty;

@@ -195,6 +195,10 @@ namespace backend.Migrations
                     b.Property<int?>("BirthYear")
                         .HasColumnType("int");
 
+                    b.Property<string>("ContentLanguage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

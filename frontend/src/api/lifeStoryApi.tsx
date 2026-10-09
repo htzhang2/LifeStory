@@ -1,7 +1,10 @@
 const API_BASE_URL = "https://localhost:7197/api"
 
+export type ContentLanguage = "en" | "zh-CN"
+
 export type LifeStory = {
   id: number
+  contentLanguage: ContentLanguage
   title: string
   authorName: string
   birthYear: number | null
@@ -52,7 +55,8 @@ export async function createLifeStory(
   title: string,
   authorName: string,
   birthYear: number | null,
-  birthPlace: string
+  birthPlace: string,
+  contentLanguage: ContentLanguage = "en"
 ): Promise<LifeStory> {
   const response = await fetch(`${API_BASE_URL}/LifeStory`, {
     method: "POST",
@@ -63,12 +67,50 @@ export async function createLifeStory(
       title,
       authorName,
       birthYear,
-      birthPlace
+      birthPlace,
+      contentLanguage
     }),
   })
 
   if (!response.ok) {
     throw new Error("Failed to create life story")
+  }
+
+  return response.json()
+}
+
+export async function getLifeStory(
+  storyId: number
+): Promise<LifeStory> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load life story")
+  }
+
+  return response.json()
+}
+
+export async function updateContentLanguage(
+  storyId: number,
+  contentLanguage: ContentLanguage
+): Promise<LifeStory> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/language`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ contentLanguage }),
+    }
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(message || "Failed to update story language")
   }
 
   return response.json()

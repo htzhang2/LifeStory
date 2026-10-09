@@ -9,5 +9,9 @@
         public int? BirthYear { get; set; }
 
         public string BirthPlace { get; set; } = string.Empty;
+
+        // Language used for questions, generated chapters, and PDFs.
+        // "en" = English, "zh-CN" = Simplified Chinese.
+        public string ContentLanguage { get; set; } = "en";
     }
 }

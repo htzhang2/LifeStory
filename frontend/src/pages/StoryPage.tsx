@@ -6,11 +6,14 @@ import {
   getChapterDefinitions,
   getChapterPhotos,
   getChapters,
+  getLifeStory,
+  updateContentLanguage,
   updateChapter,
   downloadStoryPdf,
   type Chapter,
   type ChapterDefinition,
   type ChapterPhoto,
+  type ContentLanguage,
 } from "../api/lifeStoryApi"
 import { useStory } from "../context/StoryContext"
 
@@ -39,6 +42,12 @@ export default function StoryPage() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
+  const [contentLanguage, setContentLanguage] =
+    useState<ContentLanguage>("en")
+
+  const [isSavingLanguage, setIsSavingLanguage] =
+    useState(false)
+
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -54,13 +63,16 @@ export default function StoryPage() {
         setError("")
 
         const [
+          story,
           chapterDefinitions,
           existingChapters,
         ] = await Promise.all([
+          getLifeStory(currentStoryId),
           getChapterDefinitions(),
           getChapters(currentStoryId),
         ])
 
+        setContentLanguage(story.contentLanguage ?? "en")
         setDefinitions(chapterDefinitions)
         setChapters(existingChapters)
 
@@ -106,6 +118,33 @@ export default function StoryPage() {
 
     loadStory()
   }, [storyId])
+
+  async function handleLanguageChange(
+    language: ContentLanguage
+  ) {
+    if (storyId === null) return
+
+    const previousLanguage = contentLanguage
+
+    setContentLanguage(language)
+    setError("")
+    setIsSavingLanguage(true)
+
+    try {
+      const updatedStory = await updateContentLanguage(
+        storyId,
+        language
+      )
+
+      setContentLanguage(updatedStory.contentLanguage)
+    } catch (err) {
+      console.error(err)
+      setContentLanguage(previousLanguage)
+      setError("Failed to save the story language.")
+    } finally {
+      setIsSavingLanguage(false)
+    }
+  }
 
   async function handleSelectChapter(
     chapterNumber: number
@@ -331,6 +370,41 @@ export default function StoryPage() {
           </p>
         </div>
 
+        {/* Story Content Language */}
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+          <label
+            htmlFor="content-language"
+            className="mb-2 block font-semibold text-gray-900"
+          >
+            Story Content Language
+          </label>
+
+          <p className="mb-3 text-sm text-gray-600">
+            Choose the language for your story content.
+          </p>
+
+          <select
+            id="content-language"
+            value={contentLanguage}
+            onChange={e =>
+              handleLanguageChange(
+                e.target.value as ContentLanguage
+              )
+            }
+            disabled={isSavingLanguage}
+            className="w-full max-w-sm rounded-lg border border-gray-300 bg-white p-3 disabled:opacity-50"
+          >
+            <option value="en">English</option>
+            <option value="zh-CN">简体中文</option>
+          </select>
+
+          {isSavingLanguage && (
+            <p className="mt-2 text-sm text-gray-500">
+              Saving language...
+            </p>
+          )}
+        </div>
+        
         {/* Error */}
         {error && (
           <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
