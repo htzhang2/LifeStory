@@ -1,6 +1,7 @@
 ﻿namespace backend.Service
 {
     using Azure.Storage.Blobs;
+    using Azure.Storage.Blobs.Models;
 
     public class PhotoStorageService
     {
@@ -30,7 +31,13 @@
 
             await blobClient.UploadAsync(
                 stream,
-                overwrite: false);
+                new BlobUploadOptions
+                {
+                    HttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = contentType
+                    }
+                });
 
             return blobName;
         }
