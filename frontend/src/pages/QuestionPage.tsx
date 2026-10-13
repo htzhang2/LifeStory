@@ -52,6 +52,102 @@ const questionsByLanguage: Record<ContentLanguage, Question[]> = {
       description:
         "Think about games, hobbies, reading, sports, exploring, helping your family, or anything else you enjoyed.",
     },
+    {
+      title: "Life after school",
+      question: "What did you do after finishing school?",
+      description:
+        "Tell us whether you continued studying, started working, learned a trade, or took another path. Share the experiences that shaped this stage of your life.",
+    },
+    {
+      title: "Your first job",
+      question: "What was your first job or major responsibility?",
+      description:
+        "Describe what you did, the people you worked with, what you learned, and any memorable experiences from that time.",
+    },
+    {
+      title: "Your hopes and dreams",
+      question: "What were your hopes and dreams when you were young?",
+      description:
+        "Share what you hoped your future would be like, what mattered most to you, and whether your life turned out as you expected.",
+    },
+    {
+      title: "Important relationships",
+      question: "Who were the most important people in your life during this period?",
+      description:
+        "Tell us about people who influenced you, supported you, or changed the direction of your life. They might have been a partner, friend, relative, mentor, or someone else.",
+    },
+    {
+      title: "Love and partnership",
+      question: "Who were the most important people in your life during this period?",
+      description:
+        "Tell us about people who influenced you, supported you, or changed the direction of your life. They might have been a partner, friend, relative, mentor, or someone else.",
+    },
+    {
+      title: "Building a family",
+      question: "What was it like building or caring for a family, if that was part of your life?",
+      description:
+        "Share your experiences of marriage, raising children, caring for relatives, or creating a home. Tell us about the joys, responsibilities, and challenges you remember.",
+    },
+    {
+      title: "Family traditions and memories",
+      question: "What family traditions or moments together do you remember most?",
+      description:
+        "Think about holidays, meals, celebrations, visits, family trips, or simple everyday moments that became special memories.",
+    },
+    {
+      title: "Your working life",
+      question: "What work or responsibilities played the biggest role in your life?",
+      description:
+        "Tell us about your career, business, household responsibilities, caregiving, or other work that shaped your daily life.",
+    },
+    {
+      title: "Proud moments",
+      question: "What accomplishment or moment in your life made you especially proud?",
+      description:
+        "It could be a professional achievement, helping your family, overcoming a difficulty, learning something new, or making a difference to someone.",
+    },
+    {
+      title: "Lessons learned",
+      question: "What important lessons did you learn from your work and life experiences?",
+      description:
+        "Share only what you feel comfortable sharing. You might describe a setback, a major change, a family responsibility, or a challenge that tested your strength.",
+    },
+    {
+      title: "Difficult times",
+      question: "What was one of the most difficult periods in your life, and how did you get through it?",
+      description:
+        "Think about lessons involving responsibility, relationships, money, perseverance, kindness, or making important decisions.",
+    },
+    {
+      title: "Life today",
+      question: "What does your life look like today, and what brings you happiness?",
+      description:
+        "Tell us about your daily life, the people you spend time with, your interests, and the little things that make life meaningful.",
+    },
+    {
+      title: "Values and beliefs",
+      question: "What values or beliefs have guided you throughout your life?",
+      description:
+        "Think about what you believe matters most, such as family, honesty, hard work, kindness, independence, or perseverance. Have your beliefs changed over time?",
+    },
+    {
+      title: "Advice for younger generations",
+      question: "What advice would you like to pass on to your children, grandchildren, or younger generations?",
+      description:
+        "Share what you wish you had known when you were young, including lessons about relationships, work, money, family, and finding happiness.",
+    },
+    {
+      title: "What you hope to leave behind",
+      question: "What would you most like your family to remember about you?",
+      description:
+        "It might be a story, a family tradition, a value you lived by, something you accomplished, or the way you cared for others.",
+    },
+    {
+      title: "Hopes for the future",
+      question: "What are your hopes for your family and for the generations to come?",
+      description:
+        "Share your wishes for your family's happiness, health, relationships, opportunities, and future. End with any final thoughts you would like to leave in your autobiography.",
+    }
   ],
 
   "zh-CN": [
@@ -91,6 +187,102 @@ const questionsByLanguage: Record<ContentLanguage, Question[]> = {
       description:
         "可以回忆游戏、爱好、阅读、运动、探索新事物、帮家里做事，或任何您喜欢的活动。",
     },
+    {
+      title: "毕业后的生活",
+      question: "您完成学业后做了什么？",
+      description:
+        "请讲讲您毕业后是继续学习、开始工作、学习一门手艺，还是选择了其他道路。也可以分享塑造了您这一人生阶段的经历。",
+    },
+    {
+      title: "您的第一份工作",
+      question: "您的第一份工作或第一项重要责任是什么？",
+      description:
+        "请介绍您当时做什么、与哪些人共事、学到了什么，以及那段时间有哪些难忘的经历。",
+    },
+    {
+      title: "您的希望与梦想",
+      question: "您年轻时有什么希望和梦想？",
+      description:
+        "请分享您当时对未来的期待、最看重的事情，以及后来的人生是否如您所想。",
+    },
+    {
+      title: "生命中重要的人",
+      question: "在人生的这一阶段，哪些人对您最重要？",
+      description:
+        "请讲讲那些影响过您、支持过您，或改变了您人生方向的人。他们可能是伴侣、朋友、亲戚、导师，或其他重要的人。",
+    },
+    {
+      title: "爱情与伴侣",
+      question: "您是否有过一段让您至今仍怀念的感情或爱情故事？",
+      description:
+        "如果您愿意分享，可以讲讲你们如何相识、是什么让你们走到一起，或一段重要感情带给您的体会。如果这道问题不适合您的经历，也可以分享其他有意义的往事。",
+    },
+    {
+      title: "组建家庭",
+      question: "如果组建家庭或照顾家人是您人生的一部分，那段经历是什么样的？",
+      description:
+        "可以分享婚姻生活、养育子女、照顾亲人或经营家庭的经历，也可以讲讲其中的快乐、责任和挑战。",
+    },
+    {
+      title: "家庭传统与难忘回忆",
+      question: "您最怀念哪些家庭传统或家人团聚的时刻？",
+      description:
+        "可以回忆节日、家庭聚餐、庆祝活动、探亲、家庭旅行，或那些后来成为珍贵回忆的平凡日常。",
+    },
+    {
+      title: "您的工作与事业",
+      question: "哪些工作或责任在人生中占据了最重要的位置？",
+      description:
+        "请讲讲您的职业、事业、家庭责任、照顾家人，或其他影响您日常生活的重要工作。",
+    },
+    {
+      title: "值得骄傲的时刻",
+      question: "人生中有哪些成就或时刻让您特别感到骄傲？",
+      description:
+        "这可以是工作上的成就、对家庭的付出、克服困难、学习新事物，或为他人带来积极影响。",
+    },
+    {
+      title: "人生中的困难时期",
+      question: "您人生中最艰难的时期之一是什么？您是如何度过的？",
+      description:
+        "您可以只分享自己愿意讲述的部分，例如一次挫折、重大变化、家庭责任，或考验您毅力的困难。",
+    },
+    {
+      title: "人生的经验与教训",
+      question: "您从工作和人生经历中学到了哪些重要的道理？",
+      description:
+        "可以谈谈您对责任、人际关系、金钱、坚持、善良，或重要人生选择的体会。",
+    },
+    {
+      title: "现在的生活",
+      question: "您现在的生活是什么样的？什么事情让您感到快乐？",
+      description:
+        "请讲讲您现在的日常生活、经常相处的人、兴趣爱好，以及那些让您觉得生活有意义的小事。",
+    },
+    {
+      title: "价值观与信念",
+      question: "哪些价值观或信念一直指引着您的人生？",
+      description:
+        "可以谈谈您最看重的东西，例如家庭、诚信、勤奋、善良、独立或坚持。随着岁月流逝，您的想法和信念是否发生过变化？",
+    },
+    {
+      title: "给年轻一代的建议",
+      question: "您有什么人生建议想留给子女、孙辈或年轻一代？",
+      description:
+        "请分享您年轻时希望早点明白的道理，例如如何处理人际关系、工作、金钱、家庭，以及如何寻找真正的幸福。",
+    },
+    {
+      title: "希望留下的精神财富",
+      question: "您最希望家人记住您什么？",
+      description:
+        "可以是一段故事、一项家庭传统、一种您始终坚持的价值观、一项成就，或您关爱他人的方式。",
+    },
+    {
+      title: "对未来的期望",
+      question: "您对家人以及未来几代人有什么期望？",
+      description:
+        "请分享您对家人的幸福、健康、人际关系、发展机会和未来的期望。最后，也可以写下您希望留在这本自传中的话。",
+    }
   ],
 }
 
