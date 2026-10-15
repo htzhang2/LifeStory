@@ -414,3 +414,32 @@ export async function getChapterDefinitions(): Promise<
 
   return response.json()
 }
+
+export async function getLifeStories(): Promise<LifeStory[]> {
+  const response = await fetch(`${API_BASE_URL}/LifeStory/all`)
+
+  if (!response.ok) {
+    throw new Error("Failed to load life stories")
+  }
+
+  return response.json()
+}
+
+export async function getStoryAnswers(
+  storyId: number
+): Promise<InterviewAnswer[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/answers`
+  )
+
+  // A story with no saved answers is still valid.
+  if (response.status === 404) {
+    return []
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to load interview answers")
+  }
+
+  return response.json()
+}

@@ -144,19 +144,35 @@ namespace backend.Controllers
                 return NotFound("Life story not found.");
             }
 
-            var answer = new InterviewAnswer
+            var answer = await _db.InterviewAnswers
+                .FirstOrDefaultAsync(x =>
+                    x.LifeStoryId == id &&
+                    x.QuestionNumber == request.QuestionNumber);
+
+            var now = DateTime.UtcNow;
+
+            if (answer == null)
             {
-                LifeStoryId = id,
-                QuestionNumber = request.QuestionNumber,
-                Question = request.Question,
-                Answer = request.Answer,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                answer = new InterviewAnswer
+                {
+                    LifeStoryId = id,
+                    QuestionNumber = request.QuestionNumber,
+                    Question = request.Question,
+                    Answer = request.Answer,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
 
-            _db.InterviewAnswers.Add(answer);
+                _db.InterviewAnswers.Add(answer);
+            }
+            else
+            {
+                answer.Question = request.Question;
+                answer.Answer = request.Answer;
+                answer.UpdatedAt = now;
+            }
 
-            lifeStory.UpdatedAt = DateTime.UtcNow;
+            lifeStory.UpdatedAt = now;
 
             await _db.SaveChangesAsync();
 

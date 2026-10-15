@@ -5,6 +5,7 @@ import {
   saveAnswer,
   transcribeAudio,
   getLifeStory,
+  getStoryAnswers,
   type ContentLanguage,
 } from "../api/lifeStoryApi"
 
@@ -292,7 +293,7 @@ function QuestionPage() {
 
   const currentQuestionNumber = Number(questionNumber ?? 1)
 
-  const { storyId, answers, setAnswer } = useStory()
+  const { storyId, answers, setAnswer, loadAnswers } = useStory()
 
   const [contentLanguage, setContentLanguage] =
     useState<ContentLanguage>("en")
@@ -306,30 +307,37 @@ function QuestionPage() {
   const questionIndex = currentQuestionNumber - 1
   const currentQuestion = questions[questionIndex]
 
-  // Load the language saved for this story.
+  // Load the saved language and answers for this story.
   useEffect(() => {
     if (storyId === null) return
 
     let cancelled = false
 
-    async function loadStoryLanguage() {
+    async function loadSavedStory() {
       try {
-        const story = await getLifeStory(storyId!)
+        const [story, savedAnswers] = await Promise.all([
+          getLifeStory(storyId!),
+          getStoryAnswers(storyId!),
+        ])
 
-        if (!cancelled) {
-          setContentLanguage(story.contentLanguage ?? "en")
-        }
+        if (cancelled) return
+
+        setContentLanguage(story.contentLanguage ?? "en")
+        loadAnswers(savedAnswers)
       } catch (error) {
-        console.error("Failed to load story language:", error)
+        if (!cancelled) {
+          console.error("Failed to load saved story:", error)
+          alert("Unable to load your saved story. Please try again.")
+        }
       }
     }
 
-    void loadStoryLanguage()
+    void loadSavedStory()
 
     return () => {
       cancelled = true
     }
-  }, [storyId])
+  }, [storyId, loadAnswers])
 
   // Load the saved answer when the question changes.
   useEffect(() => {
