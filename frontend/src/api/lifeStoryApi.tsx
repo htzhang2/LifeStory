@@ -391,6 +391,25 @@ export async function downloadStoryPdf(
   return response.blob()
 }
 
+export async function downloadStoryAudio(
+  storyId: number,
+  language: "en" | "zh-CN"
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/audio?language=${encodeURIComponent(language)}`
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+
+    throw new Error(
+      message || "Failed to download story audio"
+    )
+  }
+
+  return response.blob()
+}
+
 export type ChapterDefinition = {
   chapterNumber: number
   title: string

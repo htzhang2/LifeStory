@@ -70,6 +70,8 @@ builder.Services.AddScoped<PhotoStorageService>();
 
 builder.Services.AddScoped<ChapterPdfService>();
 
+builder.Services.AddScoped<TextToSpeechService>();
+
 string modelName = builder.Configuration["OpenAI:ModelName"];
 string ApiKey = builder.Configuration["OpenAI:ApiKey"];
 

@@ -14,6 +14,7 @@ namespace backend.Controllers
         private readonly LifeStoryDbContext _db;
         private readonly OpenAiStoryService _aiService;
         private readonly ChapterPdfService _chapterPdfService;
+        private readonly TextToSpeechService _textToSpeechService;
 
         private readonly ILogger<LifeStoryController> _logger;
 
@@ -21,11 +22,13 @@ namespace backend.Controllers
             LifeStoryDbContext db,
             OpenAiStoryService aiService,
             ChapterPdfService chapterPdfService,
+            TextToSpeechService textToSpeechService,
             ILogger<LifeStoryController> logger)
         {
             _db = db;
             _aiService = aiService;
             _chapterPdfService = chapterPdfService;
+            _textToSpeechService = textToSpeechService;
             _logger = logger;
         }
 
@@ -432,6 +435,64 @@ namespace backend.Controllers
                 pdfBytes,
                 "application/pdf",
                 "My-Life-Story.pdf");
+        }
+
+        [HttpGet("{id}/audio")]
+        public async Task<IActionResult> DownloadStoryAudio(
+            int id,
+            [FromQuery] string language = "en")
+        {
+            if (language != "en" && language != "zh-CN")
+            {
+                return BadRequest(
+                    "Language must be 'en' or 'zh-CN'.");
+            }
+
+            var lifeStoryExists = await _db.LifeStories
+                .AnyAsync(x => x.Id == id);
+
+            if (!lifeStoryExists)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            var chapters = await _db.Chapters
+                .Where(x => x.LifeStoryId == id)
+                .OrderBy(x => x.ChapterNumber)
+                .ToListAsync();
+
+            if (chapters.Count == 0)
+            {
+                return BadRequest(
+                    "No chapters have been created yet.");
+            }
+
+            var storyText = string.Join(
+                "\n\n",
+                chapters.Select(chapter =>
+                    $"{chapter.Title}\n\n{chapter.Content}"));
+
+            try
+            {
+                var audioBytes =
+                    await _textToSpeechService.GenerateMp3Async(
+                        storyText,
+                        language);
+
+                return File(
+                    audioBytes,
+                    "audio/mpeg",
+                    $"My-Life-Story-{language}.mp3");
+            }
+            catch (Exception ex)
+            {
+                // Replace with your application's logger.
+                // Avoid returning internal exception details to clients.
+                return Problem(
+                    title: "Failed to generate story audio.",
+                    statusCode:
+                        StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

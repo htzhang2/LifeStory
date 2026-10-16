@@ -10,6 +10,7 @@ import {
   updateContentLanguage,
   updateChapter,
   downloadStoryPdf,
+  downloadStoryAudio,
   type Chapter,
   type ChapterDefinition,
   type ChapterPhoto,
@@ -46,6 +47,9 @@ export default function StoryPage() {
     useState<ContentLanguage>("en")
 
   const [isSavingLanguage, setIsSavingLanguage] =
+    useState(false)
+
+  const [isDownloadingAudio, setIsDownloadingAudio] =
     useState(false)
 
   const [error, setError] = useState("")
@@ -312,6 +316,46 @@ export default function StoryPage() {
     }
   }
 
+  async function handleDownloadAudio() {
+  if (storyId === null) {
+    setError("No life story was found.")
+    return
+  }
+
+  try {
+    setError("")
+    setIsDownloadingAudio(true)
+
+    const language =
+      contentLanguage === "zh-CN" ? "zh-CN" : "en"
+
+    const audioBlob = await downloadStoryAudio(
+      storyId,
+      language
+    )
+
+    const url = URL.createObjectURL(audioBlob)
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = `My-Life-Story-${language}.mp3`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url)
+    }, 1000)
+  } catch (err) {
+    console.error(err)
+    setError(
+      "Failed to generate story audio. Please try again."
+    )
+  } finally {
+    setIsDownloadingAudio(false)
+  }
+}
   function handleEditMemories() {
     navigate("/question/1")
   }
@@ -695,6 +739,15 @@ export default function StoryPage() {
                   : "Download My Story PDF"}
               </button>
 
+              <button
+                onClick={handleDownloadAudio}
+                //disabled={isDownloadingAudio}
+                className="rounded-lg border px-5 py-3 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {isDownloadingAudio
+                  ? "Generating Audio..."
+                  : "Download Audio"}
+              </button>
             </div>
           </div>
         )}
