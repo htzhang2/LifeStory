@@ -40,7 +40,6 @@
             return result;
         }
 
-
         private static string BuildPrompt(
             string chapterTitle,
             IEnumerable<(string Question, string Answer)> answers,
@@ -64,99 +63,54 @@
                 : "No photos have been uploaded yet.";
 
             return
-                "You are a professional autobiography editor.\n\n" +
+                "You are an accomplished memoirist and autobiography editor.\n\n" +
 
-                $"Write a complete, engaging autobiography chapter titled " +
-                $"\"{chapterTitle}\" based on the interview material and " +
-                "photo memories below.\n\n" +
+                $"Write a vivid, engaging, first-person autobiography chapter " +
+                $"titled \"{chapterTitle}\" using the interview answers and " +
+                "photo memories provided below.\n\n" +
 
-                "Your job is to transform the material into a coherent " +
-                "personal story, NOT to simply combine or repeat the " +
-                "source material.\n\n" +
+                "WRITING STYLE:\n" +
+                "- Write a genuine personal story, not a summary or a list of facts.\n" +
+                "- Develop specific remembered events into vivid scenes when " +
+                "the source provides enough detail.\n" +
+                "- Use concrete details, natural dialogue only when supplied, " +
+                "sensory descriptions when supported, and a strong sense of place.\n" +
+                "- Build emotional depth by showing the significance and " +
+                "consequences of real experiences.\n" +
+                "- Vary sentence length and narrative pace. Give important " +
+                "moments room to unfold.\n" +
+                "- Begin with an engaging, source-supported scene or observation " +
+                "when possible, rather than automatically summarizing childhood.\n" +
+                "- End with a meaningful reflection or transition grounded in " +
+                "the author's experiences.\n" +
+                "- Connect related memories into a coherent narrative. Preserve " +
+                "the author's personality, cultural background, and point of view.\n" +
+                "- Avoid repetitive facts, generic statements, clichés, and " +
+                "unnecessary padding. Prefer depth over length.\n\n" +
 
-                "The interview material is the primary source for the " +
-                "person's life story.\n\n" +
+                "FACTUAL ACCURACY:\n" +
+                "- The interview answers are the primary source. Photo captions " +
+                "and memories provide additional information when relevant.\n" +
+                "- Preserve names, dates, places, relationships, occupations, " +
+                "and other important details accurately.\n" +
+                "- Never invent events, dialogue, thoughts, emotions, motives, " +
+                "sensory details, people, or personal experiences.\n" +
+                "- Do not infer details about a photograph beyond what its " +
+                "caption or memory explicitly supports.\n" +
+                "- Do not invent historical context or unsupported causal links.\n" +
+                "- Do not mention the interview, AI, editing process, or Photo IDs " +
+                "in the chapter content.\n" +
+                "- Use continuous prose, without bullet points or numbered lists.\n\n" +
 
-                "The photo captions and memories are additional sources " +
-                "of autobiographical information. Use them when they are " +
-                "relevant to this chapter.\n\n" +
+                "PHOTO SELECTION:\n" +
+                "- Select only photos genuinely relevant to this chapter.\n" +
+                "- Use only the supplied Photo IDs. Never invent or duplicate IDs.\n" +
+                "- Order selected photos by relevance, assigning displayOrder " +
+                "values starting at 1 with no gaps.\n" +
+                "- If no photos are relevant, return an empty photos array.\n\n" +
 
-                "Do NOT force every photo into the chapter. Only use " +
-                "photo information when it naturally belongs in this " +
-                "chapter.\n\n" +
-
-                "Do NOT describe the appearance of a photograph unless " +
-                "that information is explicitly provided in the caption " +
-                "or memory.\n\n" +
-
-                "Editorial requirements:\n\n" +
-
-                "1. Write a continuous narrative with a clear beginning, " +
-                "middle, and end.\n\n" +
-
-                "2. Combine related information from different interview " +
-                "answers and relevant photo memories into the same " +
-                "paragraphs when appropriate.\n\n" +
-
-                "3. Remove repetition and conversational phrasing.\n\n" +
-
-                "4. Convert short answers into natural, flowing prose.\n\n" +
-
-                "5. Add transitions between events, places, and periods " +
-                "of the person's life.\n\n" +
-
-                "6. Preserve important specific details such as names, " +
-                "places, dates, family relationships, occupations, " +
-                "schools, and memorable events.\n\n" +
-
-                "7. Preserve the author's personality and point of view.\n\n" +
-
-                "8. Write in first person, as if the person is telling " +
-                "their own life story.\n\n" +
-
-                "9. You may reorganize the order of information when " +
-                "that produces a better narrative.\n\n" +
-
-                "10. You may combine information from multiple answers " +
-                "and photo memories to create a more complete " +
-                "description.\n\n" +
-
-                "11. Do NOT invent facts, memories, emotions, motivations, " +
-                "conversations, people, events, or experiences.\n\n" +
-
-                "12. Do NOT infer facts about a photograph that are not " +
-                "explicitly stated in its caption or memory.\n\n" +
-
-                "13. Do NOT add details merely to make the story more " +
-                "dramatic.\n\n" +
-
-                "14. Do NOT mention the interview, questions, answers, " +
-                "photos as source material, AI, or the editing process.\n\n" +
-
-                "15. Do NOT mention Photo IDs in the chapter content.\n\n" +
-
-                "16. Do NOT use bullet points or numbered lists in the " +
-                "chapter content.\n\n" +
-
-                "17. Select only photos that are genuinely relevant to " +
-                "this chapter.\n\n" +
-
-                "18. A photo may be omitted if its caption and memory do " +
-                "not provide enough evidence that it belongs in this " +
-                "chapter.\n\n" +
-
-                "19. Use the Photo ID exactly as provided in the source " +
-                "material. Never invent a Photo ID.\n\n" +
-
-                "20. Do not include the same Photo ID more than once.\n\n" +
-
-                "21. Order selected photos by their relevance to the " +
-                "chapter.\n\n" +
-
-                "22. If no photos are relevant, return an empty photos array.\n\n" +
-
-                "Return ONLY valid JSON using exactly this structure:\n\n" +
-
+                "OUTPUT REQUIREMENTS:\n" +
+                "Return ONLY valid JSON with exactly this structure:\n\n" +
                 "{\n" +
                 "  \"content\": \"The complete finished chapter...\",\n" +
                 "  \"photos\": [\n" +
@@ -167,22 +121,14 @@
                 "  ]\n" +
                 "}\n\n" +
 
-                "The \"content\" field must contain only the finished " +
-                "autobiography chapter.\n\n" +
+                "The content field must contain only the finished chapter. " +
+                "The photos field must contain only relevant selected photos. " +
+                "Escape JSON strings correctly. Do not include Markdown fences " +
+                "or any text outside the JSON object.\n\n" +
 
-                "The \"photos\" field must contain only photos that are " +
-                "relevant to this chapter.\n\n" +
-
-                "Do NOT include Markdown code fences.\n\n" +
-
-                "Do NOT include any text outside the JSON object.\n\n" +
-
-                "The interview material is:\n\n" +
-
+                "INTERVIEW MATERIAL:\n\n" +
                 source +
-
-                "\n\nThe photo memories are:\n\n" +
-
+                "\n\nPHOTO MEMORIES:\n\n" +
                 photoSource;
         }
     }
