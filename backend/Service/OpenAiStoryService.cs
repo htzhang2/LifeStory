@@ -66,8 +66,18 @@
                 "You are an accomplished memoirist and autobiography editor.\n\n" +
 
                 $"Write a vivid, engaging, first-person autobiography chapter " +
-                $"titled \"{chapterTitle}\" using the interview answers and " +
-                "photo memories provided below.\n\n" +
+                $"for the chapter titled \"{chapterTitle}\", using the interview " +
+                "answers and photo memories provided below.\n\n" +
+
+                "IMPORTANT TITLE RULE:\n" +
+                "- The application displays the chapter title separately.\n" +
+                "- Do NOT include the chapter title in the generated content.\n" +
+                "- Do NOT add a title, heading, subtitle, or chapter-number heading " +
+                "at the beginning of the content.\n" +
+                "- Start directly with the first paragraph of the autobiography.\n" +
+                "- Do NOT repeat the chapter title as the opening sentence.\n" +
+                "- The content field must contain only the narrative prose, " +
+                "not the chapter title or any heading.\n\n" +
 
                 "WRITING STYLE:\n" +
                 "- Write a genuine personal story, not a summary or a list of facts.\n" +
@@ -112,7 +122,7 @@
                 "OUTPUT REQUIREMENTS:\n" +
                 "Return ONLY valid JSON with exactly this structure:\n\n" +
                 "{\n" +
-                "  \"content\": \"The complete finished chapter...\",\n" +
+                "  \"content\": \"The complete finished chapter prose, without a title or heading...\",\n" +
                 "  \"photos\": [\n" +
                 "    {\n" +
                 "      \"photoId\": 12,\n" +
@@ -121,7 +131,8 @@
                 "  ]\n" +
                 "}\n\n" +
 
-                "The content field must contain only the finished chapter. " +
+                "The content field must contain only the finished chapter prose, " +
+                "starting directly with its first paragraph and excluding the title. " +
                 "The photos field must contain only relevant selected photos. " +
                 "Escape JSON strings correctly. Do not include Markdown fences " +
                 "or any text outside the JSON object.\n\n" +
@@ -131,5 +142,6 @@
                 "\n\nPHOTO MEMORIES:\n\n" +
                 photoSource;
         }
+
     }
 }
