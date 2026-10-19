@@ -741,8 +741,8 @@ export default function StoryPage() {
 
               <button
                 onClick={handleDownloadAudio}
-                //disabled={isDownloadingAudio}
-                className="rounded-lg border px-5 py-3 hover:bg-gray-50 disabled:opacity-50"
+                disabled={isDownloadingAudio}
+                className="rounded-lg bg-black border px-5 py-3 text-white hover:bg-gray-50 disabled:opacity-50"
               >
                 {isDownloadingAudio
                   ? "Generating Audio..."
