@@ -425,11 +425,16 @@ namespace backend.Controllers
                 return BadRequest(
                     "No chapters have been created yet.");
             }
+            var language = await _db.LifeStories
+                .Where(x => x.Id == id)
+                .Select(x => x.ContentLanguage)
+                .FirstOrDefaultAsync();
 
             var pdfBytes =
                 await _chapterPdfService.GenerateStoryPdfAsync(
                     id,
-                    chapters);
+                    chapters,
+                    language);
 
             return File(
                 pdfBytes,

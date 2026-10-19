@@ -3,10 +3,11 @@
     using backend.Data;
     using backend.Models;
     using Microsoft.EntityFrameworkCore;
+    using QuestPDF.Drawing;
     using QuestPDF.Fluent;
     using QuestPDF.Helpers;
     using QuestPDF.Infrastructure;
-    using QuestPDF.Drawing;
+    using System;
 
     public class ChapterPdfService
     {
@@ -64,8 +65,32 @@
 
         public async Task<byte[]> GenerateStoryPdfAsync(
             int storyId,
-            IReadOnlyList<Chapter> chapters)
+            IReadOnlyList<Chapter> chapters,
+            string language = "en")
         {
+            
+            var isChinese = string.Equals(
+                language,
+                "zh-CN",
+                StringComparison.OrdinalIgnoreCase);
+
+            var coverLabel = isChinese
+                ? "家庭回忆录"
+                : "A FAMILY MEMOIR";
+
+            var coverTitle = isChinese
+                ? "我的人生故事"
+                : "My Life Story";
+
+            var coverSubtitle = isChinese
+                ? "回忆、亲情与人生旅程"
+                : "Memories, Family, and the Journey of a Lifetime";
+
+            var coverClosing = isChinese
+                ? "珍藏回忆，传承给下一代"
+                : "A collection of memories to pass down";
+
+
             // Load photos for all chapters.
             var chapterIds = chapters
                 .Select(c => c.Id)
@@ -94,6 +119,68 @@
 
             var document = Document.Create(container =>
             {
+                // Cover page
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, Unit.Centimetre);
+
+                    page.DefaultTextStyle(style => style
+                        .FontFamily("Noto Sans CJK SC", "Lato"));
+
+                    page.Content()
+                        .Background(Colors.Grey.Lighten4)
+                        .Padding(2, Unit.Centimetre)
+                        .Column(column =>
+                        {
+                            column.Spacing(24);
+
+                            // Small cover label
+                            column.Item()
+                                .PaddingTop(100)
+                                .AlignCenter()
+                                .Text(coverLabel)
+                                .FontSize(11)
+                                .Bold()
+                                .FontColor(Colors.Brown.Darken2);
+
+                            // Decorative divider
+                            column.Item()
+                                .PaddingHorizontal(35)
+                                .LineHorizontal(1)
+                                .LineColor(Colors.Brown.Lighten2);
+
+                            // Main title
+                            column.Item()
+                                .PaddingTop(20)
+                                .AlignCenter()
+                                .Text(coverTitle)
+                                .FontSize(36)
+                                .Bold()
+                                .FontColor(Colors.Brown.Darken3)
+                                .AlignCenter();
+
+                            // Subtitle
+                            column.Item()
+                                .PaddingTop(5)
+                                .PaddingHorizontal(15)
+                                .AlignCenter()
+                                .Text(coverSubtitle)
+                                .FontSize(15)
+                                .FontColor(Colors.Grey.Darken2)
+                                .AlignCenter();
+
+                            // Closing line
+                            column.Item()
+                                .PaddingTop(100)
+                                .AlignCenter()
+                                .Text(coverClosing)
+                                .FontSize(12)
+                                .Italic()
+                                .FontColor(Colors.Brown.Darken2);
+                        });
+                });
+
                 foreach (var chapter in chapters)
                 {
                     var photos = chapterPhotos
