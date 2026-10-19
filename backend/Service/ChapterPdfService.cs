@@ -68,7 +68,72 @@
             IReadOnlyList<Chapter> chapters,
             string language = "en")
         {
-            
+            var chapterPhotos = await LoadChapterPhotosAsync(chapters);
+
+            var photoImages = await DownloadPhotoImagesAsync(
+                chapterPhotos);
+
+            var document = Document.Create(container =>
+            {
+                AddCoverPage(container, language);
+
+                foreach (var chapter in chapters)
+                {
+                    var photos = chapterPhotos
+                        .Where(x => x.ChapterId == chapter.Id)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ToList();
+
+                    AddChapterPage(
+                        container,
+                        chapter,
+                        photos,
+                        photoImages);
+                }
+            });
+
+            return document.GeneratePdf();
+        }
+
+        private async Task<List<ChapterPhoto>> LoadChapterPhotosAsync(
+            IReadOnlyList<Chapter> chapters)
+        {
+            var chapterIds = chapters
+                .Select(x => x.Id)
+                .ToList();
+
+            return await _db.ChapterPhotos
+                .Where(x => chapterIds.Contains(x.ChapterId))
+                .OrderBy(x => x.ChapterId)
+                .ThenBy(x => x.DisplayOrder)
+                .ToListAsync();
+        }
+
+        private async Task<Dictionary<int, byte[]>>
+            DownloadPhotoImagesAsync(
+                IEnumerable<ChapterPhoto> chapterPhotos)
+        {
+            var images = new Dictionary<int, byte[]>();
+
+            foreach (var photo in chapterPhotos)
+            {
+                if (string.IsNullOrWhiteSpace(photo.OriginalBlobName))
+                {
+                    continue;
+                }
+
+                images[photo.Id] =
+                    await _photoStorageService.DownloadAsync(
+                        photo.OriginalBlobName);
+            }
+
+            return images;
+        }
+
+        private static void AddCoverPage(
+            IDocumentContainer container,
+            string language)
+        {
             var isChinese = string.Equals(
                 language,
                 "zh-CN",
@@ -90,233 +155,191 @@
                 ? "珍藏回忆，传承给下一代"
                 : "A collection of memories to pass down";
 
-
-            // Load photos for all chapters.
-            var chapterIds = chapters
-                .Select(c => c.Id)
-                .ToList();
-
-            var chapterPhotos = await _db.ChapterPhotos
-                .Where(x => chapterIds.Contains(x.ChapterId))
-                .OrderBy(x => x.ChapterId)
-                .ThenBy(x => x.DisplayOrder)
-                .ToListAsync();
-
-            // Download photo images before creating the PDF.
-            var photoImages = new Dictionary<int, byte[]>();
-
-            foreach (var photo in chapterPhotos)
+            container.Page(page =>
             {
-                if (string.IsNullOrWhiteSpace(photo.OriginalBlobName))
-                {
-                    continue;
-                }
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
 
-                photoImages[photo.Id] =
-                    await _photoStorageService.DownloadAsync(
-                        photo.OriginalBlobName);
-            }
+                page.DefaultTextStyle(style => style
+                    .FontFamily("Noto Sans CJK SC", "Lato"));
 
-            var document = Document.Create(container =>
-            {
-                // Cover page
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(2, Unit.Centimetre);
-
-                    page.DefaultTextStyle(style => style
-                        .FontFamily("Noto Sans CJK SC", "Lato"));
-
-                    page.Content()
-                        .Background(Colors.Grey.Lighten4)
-                        .Padding(2, Unit.Centimetre)
-                        .Column(column =>
-                        {
-                            column.Spacing(24);
-
-                            // Small cover label
-                            column.Item()
-                                .PaddingTop(100)
-                                .AlignCenter()
-                                .Text(coverLabel)
-                                .FontSize(11)
-                                .Bold()
-                                .FontColor(Colors.Brown.Darken2);
-
-                            // Decorative divider
-                            column.Item()
-                                .PaddingHorizontal(35)
-                                .LineHorizontal(1)
-                                .LineColor(Colors.Brown.Lighten2);
-
-                            // Main title
-                            column.Item()
-                                .PaddingTop(20)
-                                .AlignCenter()
-                                .Text(coverTitle)
-                                .FontSize(36)
-                                .Bold()
-                                .FontColor(Colors.Brown.Darken3)
-                                .AlignCenter();
-
-                            // Subtitle
-                            column.Item()
-                                .PaddingTop(5)
-                                .PaddingHorizontal(15)
-                                .AlignCenter()
-                                .Text(coverSubtitle)
-                                .FontSize(15)
-                                .FontColor(Colors.Grey.Darken2)
-                                .AlignCenter();
-
-                            // Closing line
-                            column.Item()
-                                .PaddingTop(100)
-                                .AlignCenter()
-                                .Text(coverClosing)
-                                .FontSize(12)
-                                .Italic()
-                                .FontColor(Colors.Brown.Darken2);
-                        });
-                });
-
-                foreach (var chapter in chapters)
-                {
-                    var photos = chapterPhotos
-                        .Where(x => x.ChapterId == chapter.Id)
-                        .OrderBy(x => x.DisplayOrder)
-                        .ToList();
-
-                    container.Page(page =>
+                page.Content()
+                    .Background(Colors.Grey.Lighten4)
+                    .Padding(2, Unit.Centimetre)
+                    .Column(column =>
                     {
-                        page.Size(PageSizes.A4);
+                        column.Spacing(24);
 
-                        page.MarginHorizontal(
-                            2.2f,
-                            Unit.Centimetre);
+                        column.Item()
+                            .PaddingTop(100)
+                            .AlignCenter()
+                            .Text(coverLabel)
+                            .FontSize(11)
+                            .Bold()
+                            .FontColor(Colors.Brown.Darken2);
 
-                        page.MarginVertical(
-                            2.5f,
-                            Unit.Centimetre);
+                        column.Item()
+                            .PaddingHorizontal(35)
+                            .LineHorizontal(1)
+                            .LineColor(Colors.Brown.Lighten2);
 
-                        // Use the Chinese-capable font throughout the page.
-                        // Lato remains a fallback for any unsupported glyphs.
-                        page.DefaultTextStyle(style => style
-                            .FontFamily("Noto Sans CJK SC", "Lato")
+                        column.Item()
+                            .PaddingTop(20)
+                            .AlignCenter()
+                            .Text(coverTitle)
+                            .FontSize(36)
+                            .Bold()
+                            .FontColor(Colors.Brown.Darken3)
+                            .AlignCenter();
+
+                        column.Item()
+                            .PaddingTop(5)
+                            .PaddingHorizontal(15)
+                            .AlignCenter()
+                            .Text(coverSubtitle)
+                            .FontSize(15)
+                            .FontColor(Colors.Grey.Darken2)
+                            .AlignCenter();
+
+                        column.Item()
+                            .PaddingTop(100)
+                            .AlignCenter()
+                            .Text(coverClosing)
                             .FontSize(12)
-                            .LineHeight(1.65f));
+                            .Italic()
+                            .FontColor(Colors.Brown.Darken2);
+                    });
+            });
+        }
 
-                        page.Header()
-                            .PaddingBottom(10)
+        private static void AddChapterPage(
+            IDocumentContainer container,
+            Chapter chapter,
+            IReadOnlyList<ChapterPhoto> photos,
+            IReadOnlyDictionary<int, byte[]> photoImages)
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+
+                page.MarginHorizontal(2.2f, Unit.Centimetre);
+                page.MarginVertical(2.5f, Unit.Centimetre);
+
+                page.DefaultTextStyle(style => style
+                    .FontFamily("Noto Sans CJK SC", "Lato")
+                    .FontSize(12)
+                    .LineHeight(1.65f));
+
+                page.Header()
+                    .PaddingBottom(10)
+                    .AlignCenter()
+                    .Text(chapter.Title)
+                    .FontSize(10)
+                    .FontColor(Colors.Grey.Darken1);
+
+                page.Content()
+                    .Column(column =>
+                    {
+                        column.Spacing(18);
+
+                        column.Item()
+                            .PaddingTop(20)
+                            .PaddingBottom(25)
                             .AlignCenter()
                             .Text(chapter.Title)
-                            .FontSize(10)
-                            .FontColor(Colors.Grey.Darken1);
+                            .FontSize(30)
+                            .Bold();
 
-                        page.Content()
-                            .Column(column =>
+                        var paragraphs = chapter.Content
+                            .Split(
+                                new[] { "\r\n\r\n", "\n\n" },
+                                StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Trim())
+                            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+                        foreach (var paragraph in paragraphs)
+                        {
+                            column.Item()
+                                .Text(paragraph)
+                                .FontSize(12)
+                                .LineHeight(1.7f);
+                        }
+
+                        foreach (var photo in photos)
+                        {
+                            if (!photoImages.TryGetValue(
+                                photo.Id,
+                                out var imageBytes))
                             {
-                                column.Spacing(18);
+                                continue;
+                            }
 
-                                column.Item()
-                                    .PaddingTop(20)
-                                    .PaddingBottom(25)
-                                    .AlignCenter()
-                                    .Text(chapter.Title)
-                                    .FontSize(30)
-                                    .Bold();
-
-                                var paragraphs = chapter.Content
-                                    .Split(
-                                        new[]
-                                        {
-                                            "\r\n\r\n",
-                                            "\n\n"
-                                        },
-                                        StringSplitOptions.RemoveEmptyEntries)
-                                    .Select(x => x.Trim())
-                                    .Where(x =>
-                                        !string.IsNullOrWhiteSpace(x));
-
-                                foreach (var paragraph in paragraphs)
-                                {
-                                    column.Item()
-                                        .Text(paragraph)
-                                        .FontSize(12)
-                                        .LineHeight(1.7f);
-                                }
-
-                                foreach (var photo in photos)
-                                {
-                                    if (!photoImages.TryGetValue(
-                                        photo.Id,
-                                        out var imageBytes))
-                                    {
-                                        continue;
-                                    }
-
-                                    column.Item().PageBreak();
-
-                                    column.Item()
-                                        .Column(photoColumn =>
-                                        {
-                                            photoColumn.Spacing(14);
-
-                                            photoColumn.Item()
-                                                .AlignCenter()
-                                                .Width(
-                                                    15.5f,
-                                                    Unit.Centimetre)
-                                                .MaxHeight(480)
-                                                .Image(imageBytes)
-                                                .FitArea();
-
-                                            if (!string.IsNullOrWhiteSpace(
-                                                photo.Caption))
-                                            {
-                                                photoColumn.Item()
-                                                    .PaddingTop(12)
-                                                    .PaddingHorizontal(15)
-                                                    .Text(photo.Caption)
-                                                    .FontSize(17)
-                                                    .Bold()
-                                                    .AlignCenter();
-                                            }
-
-                                            if (!string.IsNullOrWhiteSpace(
-                                                photo.Memory))
-                                            {
-                                                photoColumn.Item()
-                                                    .PaddingTop(4)
-                                                    .PaddingHorizontal(20)
-                                                    .Text(photo.Memory)
-                                                    .FontSize(12)
-                                                    .LineHeight(1.7f)
-                                                    .AlignCenter();
-                                            }
-                                        });
-                                }
-                            });
-
-                        page.Footer()
-                            .PaddingTop(10)
-                            .AlignCenter()
-                            .Text(text =>
-                            {
-                                text.Span("Chapter ");
-                                text.Span(
-                                    chapter.ChapterNumber.ToString());
-
-                                text.Span("  —  ");
-                                text.CurrentPageNumber();
-                                text.Span(" —");
-                            });
+                            AddPhotoPage(column, photo, imageBytes);
+                        }
                     });
-                }
-            });
 
-            return document.GeneratePdf();
+                AddPageFooter(page.Footer(), chapter.ChapterNumber);
+            });
+        }
+
+        private static void AddPhotoPage(
+            ColumnDescriptor column,
+            ChapterPhoto photo,
+            byte[] imageBytes)
+        {
+            column.Item().PageBreak();
+
+            column.Item()
+                .Column(photoColumn =>
+                {
+                    photoColumn.Spacing(14);
+
+                    photoColumn.Item()
+                        .AlignCenter()
+                        .Width(15.5f, Unit.Centimetre)
+                        .MaxHeight(480)
+                        .Image(imageBytes)
+                        .FitArea();
+
+                    if (!string.IsNullOrWhiteSpace(photo.Caption))
+                    {
+                        photoColumn.Item()
+                            .PaddingTop(12)
+                            .PaddingHorizontal(15)
+                            .Text(photo.Caption)
+                            .FontSize(17)
+                            .Bold()
+                            .AlignCenter();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(photo.Memory))
+                    {
+                        photoColumn.Item()
+                            .PaddingTop(4)
+                            .PaddingHorizontal(20)
+                            .Text(photo.Memory)
+                            .FontSize(12)
+                            .LineHeight(1.7f)
+                            .AlignCenter();
+                    }
+                });
+        }
+
+        private static void AddPageFooter(
+            IContainer footer,
+            int chapterNumber)
+        {
+            footer
+                .PaddingTop(10)
+                .AlignCenter()
+                .Text(text =>
+                {
+                    text.Span("Chapter ");
+                    text.Span(chapterNumber.ToString());
+                    text.Span("  —  ");
+                    text.CurrentPageNumber();
+                    text.Span(" —");
+                });
         }
     }
 }
