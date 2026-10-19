@@ -73,9 +73,11 @@
             var photoImages = await DownloadPhotoImagesAsync(
                 chapterPhotos);
 
+            byte[]? coverImage = SelectCoverPhoto(chapters, chapterPhotos, photoImages);
+
             var document = Document.Create(container =>
             {
-                AddCoverPage(container, language);
+                AddCoverPage(container, language, coverImage);
 
                 foreach (var chapter in chapters)
                 {
@@ -130,9 +132,38 @@
             return images;
         }
 
+        private static byte[]? SelectCoverPhoto(
+            IReadOnlyList<Chapter> chapters,
+            List<ChapterPhoto> chapterPhotos,
+            IReadOnlyDictionary<int, byte[]> photoImages)
+        {
+            byte[]? coverImage = null;
+
+            var firstChapter = chapters
+                .OrderBy(x => x.ChapterNumber)
+                .FirstOrDefault();
+
+            if (firstChapter != null)
+            {
+                var coverPhoto = chapterPhotos
+                    .Where(x => x.ChapterId == firstChapter.Id)
+                    .OrderBy(x => x.DisplayOrder)
+                    .FirstOrDefault();
+
+                if (coverPhoto != null &&
+                    photoImages.TryGetValue(coverPhoto.Id, out var imageBytes))
+                {
+                    coverImage = imageBytes;
+                }
+            }
+
+            return coverImage;
+        }
+
         private static void AddCoverPage(
             IDocumentContainer container,
-            string language)
+            string language,
+            byte[]? coverImage)
         {
             var isChinese = string.Equals(
                 language,
@@ -163,37 +194,42 @@
                 page.DefaultTextStyle(style => style
                     .FontFamily("Noto Sans CJK SC", "Lato"));
 
+                
                 page.Content()
                     .Background(Colors.Grey.Lighten4)
                     .Padding(2, Unit.Centimetre)
                     .Column(column =>
                     {
-                        column.Spacing(24);
+                        column.Spacing(20);
 
+                        // Cover label
                         column.Item()
-                            .PaddingTop(100)
+                            .PaddingTop(45)
                             .AlignCenter()
                             .Text(coverLabel)
                             .FontSize(11)
                             .Bold()
                             .FontColor(Colors.Brown.Darken2);
 
+                        // Decorative divider
                         column.Item()
                             .PaddingHorizontal(35)
                             .LineHorizontal(1)
                             .LineColor(Colors.Brown.Lighten2);
 
+                        // Main title
                         column.Item()
-                            .PaddingTop(20)
+                            .PaddingTop(10)
                             .AlignCenter()
                             .Text(coverTitle)
-                            .FontSize(36)
+                            .FontSize(isChinese ? 32 : 36)
                             .Bold()
                             .FontColor(Colors.Brown.Darken3)
                             .AlignCenter();
 
+                        // Subtitle
                         column.Item()
-                            .PaddingTop(5)
+                            .PaddingTop(2)
                             .PaddingHorizontal(15)
                             .AlignCenter()
                             .Text(coverSubtitle)
@@ -201,8 +237,21 @@
                             .FontColor(Colors.Grey.Darken2)
                             .AlignCenter();
 
+                        // Optional cover photo
+                        if (coverImage is { Length: > 0 })
+                        {
+                            column.Item()
+                                .PaddingTop(15)
+                                .AlignCenter()
+                                .Width(12.5f, Unit.Centimetre)
+                                .Height(8, Unit.Centimetre)
+                                .Image(coverImage)
+                                .FitArea();
+                        }
+
+                        // Closing text
                         column.Item()
-                            .PaddingTop(100)
+                            .PaddingTop(20)
                             .AlignCenter()
                             .Text(coverClosing)
                             .FontSize(12)
