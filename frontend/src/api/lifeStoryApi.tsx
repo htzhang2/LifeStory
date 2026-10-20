@@ -11,6 +11,7 @@ export type LifeStory = {
   birthPlace: string
   createdAt: string
   updatedAt: string
+  coverPhotoId: number | null
 }
 
 export type SaveAnswerRequest = {
@@ -461,4 +462,30 @@ export async function getStoryAnswers(
   }
 
   return response.json()
+}
+
+export async function setCoverPhoto(
+  storyId: number,
+  photoId: number | null
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/cover-photo`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        photoId,
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+
+    throw new Error(
+      message || "Failed to update cover photo"
+    )
+  }
 }

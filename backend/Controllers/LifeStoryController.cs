@@ -407,10 +407,9 @@ namespace backend.Controllers
         public async Task<IActionResult> DownloadStoryPdf(
             int id)
         {
-            var lifeStoryExists =
-                await _db.LifeStories.AnyAsync(x => x.Id == id);
+            var lifeStory = await _db.LifeStories.FindAsync(id);
 
-            if (!lifeStoryExists)
+            if (lifeStory == null)
             {
                 return NotFound("Life story not found.");
             }
@@ -432,7 +431,7 @@ namespace backend.Controllers
 
             var pdfBytes =
                 await _chapterPdfService.GenerateStoryPdfAsync(
-                    id,
+                    lifeStory,
                     chapters,
                     language);
 
@@ -499,5 +498,43 @@ namespace backend.Controllers
                         StatusCodes.Status500InternalServerError);
             }
         }
+
+
+        [HttpPut("{id}/cover-photo")]
+        public async Task<IActionResult> SetCoverPhoto(
+            int id,
+            [FromBody] SetCoverPhotoRequest request,
+            CancellationToken cancellationToken)
+        {
+            var lifeStory = await _db.LifeStories.FindAsync(id);
+
+            if (lifeStory == null)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            if (request.PhotoId.HasValue)
+            {
+                var photoExists = await _db.StoryPhotos
+                    .AnyAsync(
+                        x => x.Id == request.PhotoId.Value
+                             && x.LifeStoryId == id,
+                        cancellationToken);
+
+                if (!photoExists)
+                {
+                    return BadRequest(
+                        "The selected photo does not belong to this life story.");
+                }
+            }
+
+            lifeStory.CoverPhotoId = request.PhotoId;
+            lifeStory.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync(cancellationToken);
+
+            return NoContent();
+        }
+
     }
 }

@@ -64,16 +64,19 @@
         }
 
         public async Task<byte[]> GenerateStoryPdfAsync(
-            int storyId,
+            LifeStory story,
             IReadOnlyList<Chapter> chapters,
             string language = "en")
         {
             var chapterPhotos = await LoadChapterPhotosAsync(chapters);
 
-            var photoImages = await DownloadPhotoImagesAsync(
-                chapterPhotos);
+            var storyPhotos = await _db.StoryPhotos.Where(x => x.LifeStoryId == story.Id)
+                .ToListAsync();
 
-            byte[]? coverImage = SelectCoverPhoto(chapters, chapterPhotos, photoImages);
+            var photoImages = await DownloadPhotoImagesAsync(
+                storyPhotos);
+
+            byte[]? coverImage = SelectCoverPhoto(story, photoImages);
 
             var document = Document.Create(container =>
             {
@@ -113,11 +116,11 @@
 
         private async Task<Dictionary<int, byte[]>>
             DownloadPhotoImagesAsync(
-                IEnumerable<ChapterPhoto> chapterPhotos)
+                IEnumerable<StoryPhoto> storyPhotos)
         {
             var images = new Dictionary<int, byte[]>();
 
-            foreach (var photo in chapterPhotos)
+            foreach (var photo in storyPhotos)
             {
                 if (string.IsNullOrWhiteSpace(photo.OriginalBlobName))
                 {
@@ -133,27 +136,17 @@
         }
 
         private static byte[]? SelectCoverPhoto(
-            IReadOnlyList<Chapter> chapters,
-            List<ChapterPhoto> chapterPhotos,
+            LifeStory story,
             IReadOnlyDictionary<int, byte[]> photoImages)
         {
             byte[]? coverImage = null;
 
-            var firstChapter = chapters
-                .OrderBy(x => x.ChapterNumber)
-                .FirstOrDefault();
-
-            if (firstChapter != null)
+            if (story.CoverPhotoId.HasValue)
             {
-                var coverPhoto = chapterPhotos
-                    .Where(x => x.ChapterId == firstChapter.Id)
-                    .OrderBy(x => x.DisplayOrder)
-                    .FirstOrDefault();
-
-                if (coverPhoto != null &&
-                    photoImages.TryGetValue(coverPhoto.Id, out var imageBytes))
+                if (photoImages.TryGetValue(story.CoverPhotoId.Value, out var imageBytes))
                 {
                     coverImage = imageBytes;
+
                 }
             }
 

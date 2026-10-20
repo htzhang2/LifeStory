@@ -20,6 +20,8 @@
 
         public DateTime UpdatedAt { get; set; }
 
+        public int? CoverPhotoId { get; set; }
+
         // navigation property
         /*
         public ICollection<InterviewAnswer> InterviewAnswers { get; set; }
