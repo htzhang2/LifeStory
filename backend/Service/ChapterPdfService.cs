@@ -235,8 +235,9 @@
                         {
                             column.Item()
                                 .PaddingTop(15)
+                                .ExtendHorizontal()
                                 .AlignCenter()
-                                .Width(12.5f, Unit.Centimetre)
+                                .AlignMiddle()
                                 .Height(8, Unit.Centimetre)
                                 .Image(coverImage)
                                 .FitArea();
