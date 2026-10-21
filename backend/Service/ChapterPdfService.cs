@@ -376,7 +376,7 @@
                         }
                     });
 
-                AddPageFooter(page.Footer(), chapter.ChapterNumber);
+                AddPageFooter(page.Footer());
             });
         }
 
@@ -424,19 +424,14 @@
         }
 
         private static void AddPageFooter(
-            IContainer footer,
-            int chapterNumber)
+            IContainer footer)
         {
             footer
                 .PaddingTop(10)
                 .AlignCenter()
                 .Text(text =>
                 {
-                    text.Span("Chapter ");
-                    text.Span(chapterNumber.ToString());
-                    text.Span("  —  ");
                     text.CurrentPageNumber();
-                    text.Span(" —");
                 });
         }
     }
