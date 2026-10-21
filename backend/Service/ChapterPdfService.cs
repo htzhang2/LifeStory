@@ -82,6 +82,8 @@
             {
                 AddCoverPage(container, language, coverImage);
 
+                AddTableOfContents(container, chapters, language);
+
                 foreach (var chapter in chapters)
                 {
                     var photos = chapterPhotos
@@ -93,7 +95,8 @@
                         container,
                         chapter,
                         photos,
-                        photoImages);
+                        photoImages,
+                        $"chapter-{chapter.Id}");
                 }
             });
 
@@ -255,11 +258,62 @@
             });
         }
 
+        private static void AddTableOfContents(
+            IDocumentContainer container,
+            IReadOnlyList<Chapter> chapters,
+            string language)
+        {
+            var isChinese = language == "zh-CN";
+
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+
+                page.DefaultTextStyle(style => style
+                    .FontFamily("Noto Sans CJK SC", "Lato")
+                    .FontSize(12));
+
+                page.Content()
+                    .Column(column =>
+                    {
+                        column.Spacing(18);
+
+                        column.Item()
+                            .PaddingBottom(12)
+                            .Text(isChinese ? "目录" : "Table of Contents")
+                            .FontSize(24)
+                            .Bold();
+
+                        foreach (var chapter in chapters)
+                        {
+                            var sectionName = $"chapter-{chapter.Id}";
+
+                            column.Item().Row(row =>
+                            {
+                                row.RelativeItem()
+                                    .Text($"{chapter.ChapterNumber}. {chapter.Title}");
+
+                                row.ConstantItem(40)
+                                    .AlignRight()
+                                    .Text(text =>
+                                    {
+                                        text.BeginPageNumberOfSection(sectionName);
+                                        text.Span("-");
+                                        text.EndPageNumberOfSection(sectionName);
+                                    });
+                            });
+                        }
+                    });
+            });
+        }
+
         private static void AddChapterPage(
             IDocumentContainer container,
             Chapter chapter,
             IReadOnlyList<ChapterPhoto> photos,
-            IReadOnlyDictionary<int, byte[]> photoImages)
+            IReadOnlyDictionary<int, byte[]> photoImages,
+            string sectionName)
         {
             container.Page(page =>
             {
@@ -281,6 +335,7 @@
                     .FontColor(Colors.Grey.Darken1);
 
                 page.Content()
+                    .Section(sectionName)
                     .Column(column =>
                     {
                         column.Spacing(18);
@@ -311,7 +366,7 @@
                         foreach (var photo in photos)
                         {
                             if (!photoImages.TryGetValue(
-                                photo.Id,
+                                photo.StoryPhotoId,
                                 out var imageBytes))
                             {
                                 continue;
