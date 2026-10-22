@@ -324,15 +324,15 @@
 
                 page.DefaultTextStyle(style => style
                     .FontFamily("Noto Sans CJK SC", "Lato")
-                    .FontSize(12)
-                    .LineHeight(1.65f));
+                    .FontSize(11)
+                    .LineHeight(1.6f));
 
                 page.Header()
-                    .PaddingBottom(10)
+                    .PaddingBottom(8)
                     .AlignCenter()
                     .Text(chapter.Title)
-                    .FontSize(10)
-                    .FontColor(Colors.Grey.Darken1);
+                    .FontSize(9)
+                    .FontColor(Colors.Grey.Medium);
 
                 page.Content()
                     .Section(sectionName)
@@ -341,11 +341,12 @@
                         column.Spacing(18);
 
                         column.Item()
-                            .PaddingTop(20)
-                            .PaddingBottom(25)
+                            .ShowEntire()
+                            .PaddingTop(15)
+                            .PaddingBottom(20)
                             .AlignCenter()
                             .Text(chapter.Title)
-                            .FontSize(30)
+                            .FontSize(26)
                             .Bold();
 
                         var paragraphs = chapter.Content
@@ -358,9 +359,10 @@
                         foreach (var paragraph in paragraphs)
                         {
                             column.Item()
+                                .PaddingBottom(8)
                                 .Text(paragraph)
-                                .FontSize(12)
-                                .LineHeight(1.7f);
+                                .FontSize(11)
+                                .LineHeight(1.6f);
                         }
 
                         foreach (var photo in photos)
@@ -385,9 +387,12 @@
             ChapterPhoto photo,
             byte[] imageBytes)
         {
+            // Give each photo its own page.
             column.Item().PageBreak();
 
+            // Keep the photo and its caption/memory together.
             column.Item()
+                .ShowEntire()
                 .Column(photoColumn =>
                 {
                     photoColumn.Spacing(14);
@@ -395,17 +400,17 @@
                     photoColumn.Item()
                         .AlignCenter()
                         .Width(15.5f, Unit.Centimetre)
-                        .MaxHeight(480)
+                        .MaxHeight(400)
                         .Image(imageBytes)
                         .FitArea();
 
                     if (!string.IsNullOrWhiteSpace(photo.Caption))
                     {
                         photoColumn.Item()
-                            .PaddingTop(12)
+                            .PaddingTop(8)
                             .PaddingHorizontal(15)
                             .Text(photo.Caption)
-                            .FontSize(17)
+                            .FontSize(16)
                             .Bold()
                             .AlignCenter();
                     }
@@ -416,8 +421,8 @@
                             .PaddingTop(4)
                             .PaddingHorizontal(20)
                             .Text(photo.Memory)
-                            .FontSize(12)
-                            .LineHeight(1.7f)
+                            .FontSize(11)
+                            .LineHeight(1.6f)
                             .AlignCenter();
                     }
                 });
@@ -427,7 +432,7 @@
             IContainer footer)
         {
             footer
-                .PaddingTop(10)
+                .PaddingTop(8)
                 .AlignCenter()
                 .Text(text =>
                 {
