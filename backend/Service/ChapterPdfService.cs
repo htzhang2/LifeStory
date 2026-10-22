@@ -13,16 +13,19 @@
     {
         private readonly PhotoStorageService _photoStorageService;
         private readonly LifeStoryDbContext _db;
+        private readonly ILogger<ChapterPdfService> _logger;
 
         private static bool _chineseFontRegistered;
         private static readonly object FontLock = new();
 
         public ChapterPdfService(
             PhotoStorageService photoStorageService,
-            LifeStoryDbContext db)
+            LifeStoryDbContext db,
+            ILogger<ChapterPdfService> logger)
         {
             _photoStorageService = photoStorageService;
             _db = db;
+            _logger = logger;
 
             EnsureChineseFontRegistered();
         }
@@ -117,12 +120,10 @@
                 .ToListAsync();
         }
 
-        private async Task<Dictionary<int, byte[]>>
-            DownloadPhotoImagesAsync(
+        private async Task<Dictionary<int, byte[]>> DownloadPhotoImagesAsync(
                 IEnumerable<StoryPhoto> storyPhotos)
         {
             var images = new Dictionary<int, byte[]>();
-
             foreach (var photo in storyPhotos)
             {
                 if (string.IsNullOrWhiteSpace(photo.OriginalBlobName))
@@ -130,9 +131,35 @@
                     continue;
                 }
 
-                images[photo.Id] =
-                    await _photoStorageService.DownloadAsync(
+                try
+                {
+                    var imageBytes =
+                        await _photoStorageService.DownloadAsync(
+                            photo.OriginalBlobName);
+
+                    if (imageBytes.Length > 0)
+                    {
+                        images[photo.Id] = imageBytes;
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Skipping photo {PhotoId}: blob {BlobName} is empty.",
+                            photo.Id,
+                            photo.OriginalBlobName);
+                    }
+                }
+                catch (Azure.RequestFailedException ex)
+                    when (ex.Status == 404)
+                {
+                    // The blob no longer exists. Skip this photo.
+                    // Other photos can still be included in the PDF.
+                    _logger.LogWarning(
+                        ex,
+                        "Skipping photo {PhotoId}: blob {BlobName} was not found.",
+                        photo.Id,
                         photo.OriginalBlobName);
+                }
             }
 
             return images;
@@ -392,7 +419,6 @@
 
             // Keep the photo and its caption/memory together.
             column.Item()
-                .ShowEntire()
                 .Column(photoColumn =>
                 {
                     photoColumn.Spacing(14);
