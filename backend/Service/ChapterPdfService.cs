@@ -160,27 +160,44 @@
                         photo.Id,
                         photo.OriginalBlobName);
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to download photo {PhotoId} from blob {BlobName}.",
+                        photo.Id,
+                        photo.OriginalBlobName);
+
+                    throw;
+                }
             }
 
             return images;
         }
 
-        private static byte[]? SelectCoverPhoto(
+        private byte[]? SelectCoverPhoto(
             LifeStory story,
             IReadOnlyDictionary<int, byte[]> photoImages)
         {
-            byte[]? coverImage = null;
-
-            if (story.CoverPhotoId.HasValue)
+            if (!story.CoverPhotoId.HasValue)
             {
-                if (photoImages.TryGetValue(story.CoverPhotoId.Value, out var imageBytes))
-                {
-                    coverImage = imageBytes;
-
-                }
+                return null;
             }
 
-            return coverImage;
+            var coverPhotoId = story.CoverPhotoId.Value;
+
+            if (photoImages.TryGetValue(coverPhotoId, out var imageBytes))
+            {
+                return imageBytes;
+            }
+
+            _logger.LogWarning(
+                "Selected cover photo {PhotoId} for life story {StoryId} " +
+                "could not be loaded. Generating PDF without a cover image.",
+                coverPhotoId,
+                story.Id);
+
+            return null;
         }
 
         private static void AddCoverPage(
