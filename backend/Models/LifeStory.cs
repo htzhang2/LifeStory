@@ -12,6 +12,8 @@
 
         public string AuthorName { get; set; } = string.Empty;
 
+        public string? Dedication { get; set; }
+
         public int? BirthYear { get; set; }
 
         public string BirthPlace { get; set; } = string.Empty;

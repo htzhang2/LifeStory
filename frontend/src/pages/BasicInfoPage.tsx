@@ -13,6 +13,7 @@ function BasicInfoPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [contentLanguage, setContentLanguage] =
     useState<ContentLanguage>("en")
+  const [dedication, setDedication] = useState("")
 
   async function handleContinue() {
     const name = authorName.trim()
@@ -38,7 +39,8 @@ function BasicInfoPage() {
         name,
         year,
         place,
-        contentLanguage
+        contentLanguage,
+        dedication
       )
 
       setStoryId(story.id)
@@ -128,6 +130,28 @@ function BasicInfoPage() {
             />
           </div>
 
+          <div className="mt-8">
+            <label
+              htmlFor="dedication"
+              className="block text-lg font-semibold text-gray-900"
+            >
+              Who would you like to dedicate your life story to?
+            </label>
+
+            <textarea
+              id="dedication"
+              value={dedication}
+              onChange={(e) => setDedication(e.target.value)}
+              rows={4}
+              maxLength={2000}
+              className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-4 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="For example: To my wife and children, with love. May these memories always keep us connected."
+            />
+
+            <p className="mt-2 text-sm text-gray-500">
+              Optional. You can dedicate your story to family, friends, or future generations.
+            </p>
+          </div>
 
           <div className="mt-8">
             <label

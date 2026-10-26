@@ -96,6 +96,7 @@ namespace backend.Controllers
                 ContentLanguage = contentLanguage,
                 Title = request.Title,
                 AuthorName = request.AuthorName,
+                Dedication = request.Dedication,
                 BirthYear = request.BirthYear,
                 BirthPlace = request.BirthPlace,
                 CreatedAt = DateTime.UtcNow,

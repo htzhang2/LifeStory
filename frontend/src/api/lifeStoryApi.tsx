@@ -7,6 +7,7 @@ export type LifeStory = {
   contentLanguage: ContentLanguage
   title: string
   authorName: string
+  dedication: string | null
   birthYear: number | null
   birthPlace: string
   createdAt: string
@@ -57,7 +58,8 @@ export async function createLifeStory(
   authorName: string,
   birthYear: number | null,
   birthPlace: string,
-  contentLanguage: ContentLanguage = "en"
+  contentLanguage: ContentLanguage = "en",
+  dedication: string | null = null
 ): Promise<LifeStory> {
   const response = await fetch(`${API_BASE_URL}/LifeStory`, {
     method: "POST",
@@ -67,6 +69,7 @@ export async function createLifeStory(
     body: JSON.stringify({
       title,
       authorName,
+      dedication,
       birthYear,
       birthPlace,
       contentLanguage

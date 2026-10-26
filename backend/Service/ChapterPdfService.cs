@@ -85,6 +85,8 @@
             {
                 AddCoverPage(container, language, coverImage);
 
+                AddAuthorDedicationPage(container, story, language);
+
                 AddTableOfContents(container, chapters, language);
 
                 foreach (var chapter in chapters)
@@ -302,6 +304,73 @@
             });
         }
 
+
+        private static void AddAuthorDedicationPage(
+            IDocumentContainer container,
+            LifeStory story,
+            string language = "en")
+        {
+            bool isChinese = string.Equals(
+                language,
+                "zh-CN",
+                StringComparison.OrdinalIgnoreCase);
+
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.MarginHorizontal(2.5f, Unit.Centimetre);
+                page.MarginVertical(3f, Unit.Centimetre);
+
+                page.DefaultTextStyle(style => style
+                    .FontFamily("Noto Sans CJK SC", "Lato")
+                    .FontSize(12));
+
+                page.Content()
+                    .AlignCenter()
+                    .Column(column =>
+                    {
+                        column.Spacing(18);
+
+                        // Author
+                        if (!string.IsNullOrWhiteSpace(story.AuthorName))
+                        {
+                            column.Item()
+                                .PaddingTop(55)
+                                .Text(isChinese ? "作者" : "About the Author")
+                                .FontSize(18)
+                                .Bold()
+                                .AlignCenter();
+
+                            column.Item()
+                                .Text(story.AuthorName)
+                                .FontSize(15)
+                                .AlignCenter();
+                        }
+
+                        // Dedication
+                        if (!string.IsNullOrWhiteSpace(story.Dedication))
+                        {
+                            column.Item()
+                                .PaddingTop(55)
+                                .Text(isChinese ? "献给" : "Dedication")
+                                .FontSize(18)
+                                .Bold()
+                                .AlignCenter();
+
+                            column.Item()
+                                .PaddingTop(12)
+                                .PaddingHorizontal(15)
+                                .Text(story.Dedication)
+                                .FontSize(14)
+                                .LineHeight(1.8f)
+                                .AlignCenter();
+                        }
+                    });
+
+                AddPageFooter(page.Footer());
+            });
+        }
+
         private static void AddTableOfContents(
             IDocumentContainer container,
             IReadOnlyList<Chapter> chapters,
@@ -349,6 +418,8 @@
                             });
                         }
                     });
+
+                AddPageFooter(page.Footer());
             });
         }
 
