@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import WelcomePage from "./pages/WelcomePage"
 import BasicInfoPage from "./pages/BasicInfoPage"
@@ -13,17 +14,32 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<WelcomePage />} />
+
+          {/* Create a new life story */}
           <Route
             path="/basic-info"
             element={<BasicInfoPage />}
           />
+
+          {/* Edit an existing life story */}
+          <Route
+            path="/stories/:storyId/edit"
+            element={<BasicInfoPage />}
+          />
+
           <Route
             path="/question/:questionNumber"
             element={<QuestionPage />}
           />
+
           <Route path="/story" element={<StoryPage />} />
+
           <Route path="/photos" element={<PhotosPage />} />
-          <Route path="/photos/upload" element={<UploadPhotoPage />} />
+
+          <Route
+            path="/photos/upload"
+            element={<UploadPhotoPage />}
+          />
         </Routes>
       </BrowserRouter>
     </StoryProvider>

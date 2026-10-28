@@ -83,7 +83,7 @@
 
             var document = Document.Create(container =>
             {
-                AddCoverPage(container, language, coverImage);
+                AddCoverPage(container, story, language, coverImage);
 
                 AddAuthorDedicationPage(container, story, language);
 
@@ -204,6 +204,7 @@
 
         private static void AddCoverPage(
             IDocumentContainer container,
+            LifeStory story,
             string language,
             byte[]? coverImage)
         {
@@ -216,9 +217,11 @@
                 ? "家庭回忆录"
                 : "A FAMILY MEMOIR";
 
-            var coverTitle = isChinese
-                ? "我的人生故事"
-                : "My Life Story";
+            var coverTitle = !string.IsNullOrEmpty(story.Title)
+                ? story.Title
+                : isChinese
+                    ? "我的人生故事"
+                    : "My Life Story";
 
             var coverSubtitle = isChinese
                 ? "回忆、亲情与人生旅程"

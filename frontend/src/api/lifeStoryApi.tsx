@@ -97,6 +97,41 @@ export async function getLifeStory(
   return response.json()
 }
 
+
+export type UpdateLifeStoryDetailsRequest = {
+  title: string
+  authorName: string
+  dedication: string | null
+  birthYear: number | null
+  birthPlace: string
+  contentLanguage: ContentLanguage
+}
+
+export async function updateLifeStoryDetails(
+  storyId: number,
+  details: UpdateLifeStoryDetailsRequest
+): Promise<LifeStory> {
+  const response = await fetch(
+    `${API_BASE_URL}/LifeStory/${storyId}/details`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(details),
+    }
+  )
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(
+      message || "Failed to update story details"
+    )
+  }
+
+  return response.json()
+}
+
 export async function updateContentLanguage(
   storyId: number,
   contentLanguage: ContentLanguage

@@ -754,7 +754,14 @@ export default function StoryPage() {
 
         {/* Memories and Photos */}
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-
+          <button
+            onClick={() => navigate(`/stories/${storyId}/edit`)}
+            disabled={!storyId}
+            className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Edit Story Details
+          </button>
+          
           <button
             onClick={handleEditMemories}
             className="rounded-xl border border-gray-200 bg-white p-5 text-left hover:border-gray-400"

@@ -1,12 +1,12 @@
-using backend.Data;
-using backend.Dto;
-using backend.Models;
-using backend.Service;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 namespace backend.Controllers
 {
+    using backend.Data;
+    using backend.Dto;
+    using backend.Models;
+    using backend.Service;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
+
     [ApiController]
     [Route("api/[controller]")]
     public class LifeStoryController : ControllerBase
@@ -128,6 +128,60 @@ namespace backend.Controllers
                 return NotFound("Life story not found.");
             }
 
+            lifeStory.ContentLanguage = request.ContentLanguage;
+            lifeStory.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(lifeStory);
+        }
+
+        [HttpPut("{id}/details")]
+        public async Task<IActionResult> UpdateLifeStoryDetails(
+            int id,
+            UpdateLifeStoryDetailsRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                return BadRequest("Title is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AuthorName))
+            {
+                return BadRequest("Author name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.BirthPlace))
+            {
+                return BadRequest("Birth place is required.");
+            }
+
+            if (request.BirthYear.HasValue &&
+                (request.BirthYear.Value < 1900 ||
+                 request.BirthYear.Value > DateTime.UtcNow.Year))
+            {
+                return BadRequest("Please enter a valid birth year.");
+            }
+
+            if (request.ContentLanguage != "en" &&
+                request.ContentLanguage != "zh-CN")
+            {
+                return BadRequest(
+                    "ContentLanguage must be 'en' or 'zh-CN'.");
+            }
+
+            var lifeStory = await _db.LifeStories.FindAsync(id);
+
+            if (lifeStory == null)
+            {
+                return NotFound("Life story not found.");
+            }
+
+            lifeStory.Title = request.Title.Trim();
+            lifeStory.AuthorName = request.AuthorName.Trim();
+            lifeStory.Dedication = request.Dedication?.Trim();
+            lifeStory.BirthYear = request.BirthYear;
+            lifeStory.BirthPlace = request.BirthPlace.Trim();
             lifeStory.ContentLanguage = request.ContentLanguage;
             lifeStory.UpdatedAt = DateTime.UtcNow;
 
